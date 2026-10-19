@@ -6922,7 +6922,7 @@ function Il() {
                   onClick: () => { P1.value = e; },
                   children: [
                     e === 0 ? "全" : Fe[e],
-                    s > 0 && r("b", { class: "badge", children: s }),
+                    e !== 0 && s > 0 && r("b", { class: "badge", children: s }),
                   ],
                 },
                 `elem-${e}`,
@@ -6951,7 +6951,7 @@ function Il() {
                   onClick: () => { FormFilter.value = f.id; },
                   children: [
                     f.name,
-                    s > 0 && r("b", { class: "badge", children: s }),
+                    f.id !== 0 && s > 0 && r("b", { class: "badge", children: s }),
                   ],
                 },
                 `form-${f.id}`,
