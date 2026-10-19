@@ -1496,7 +1496,7 @@ const z = JSON.parse(
     10: "斗",
   },
   FORM_TABS = [
-    { id: 0, name: "器" },
+    { id: 0, name: "全" },
     { id: 7, name: "刀" },
     { id: 2, name: "剑" },
     { id: 6, name: "枪" },
@@ -1505,7 +1505,6 @@ const z = JSON.parse(
     { id: 5, name: "御" },
     { id: 8, name: "锤" },
     { id: 9, name: "幡" },
-    { id: 10, name: "斗" },
     { id: 1, name: "珠" },
   ],
   getEquipForms = (eq) => {
@@ -6922,7 +6921,7 @@ function Il() {
                   ].filter(Boolean).join(" "),
                   onClick: () => { P1.value = e; },
                   children: [
-                    e === 0 ? "属" : Fe[e],
+                    e === 0 ? "全" : Fe[e],
                     s > 0 && r("b", { class: "badge", children: s }),
                   ],
                 },
