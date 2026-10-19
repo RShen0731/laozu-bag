@@ -1496,7 +1496,7 @@ const z = JSON.parse(
     10: "斗",
   },
   FORM_TABS = [
-    { id: 0, name: "全部类型" },
+    { id: 0, name: "类型" },
     { id: 7, name: "刀" },
     { id: 2, name: "剑" },
     { id: 6, name: "枪" },
@@ -6892,59 +6892,53 @@ function Il() {
           }),
           r("div", {
             class: "tabs row-filter",
-            children: [
-              r("span", { class: "filter-label", children: "属性" }),
-              [0, 1, 2, 3, 4, 5, 6, 7, 8].map((e) => {
-                const s = e === 0
-                  ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
-                  : (p1.get(e) ?? []).reduce(
-                      (a, n) => a + n.tiers.reduce((l, i) => l + (ae.value[i.id] ?? 0), 0),
-                      0,
-                    );
-                return r(
-                  "button",
-                  {
-                    type: "button",
-                    class: P1.value === e ? "tab on" : "tab",
-                    onClick: () => { P1.value = e; },
-                    children: [
-                      e === 0 ? "全部属性" : Fe[e],
-                      s > 0 && r("b", { class: "badge", children: s }),
-                    ],
-                  },
-                  e,
-                );
-              }),
-            ],
+            children: [0, 1, 2, 3, 4, 5, 6, 7, 8].map((e) => {
+              const s = e === 0
+                ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
+                : (p1.get(e) ?? []).reduce(
+                    (a, n) => a + n.tiers.reduce((l, i) => l + (ae.value[i.id] ?? 0), 0),
+                    0,
+                  );
+              return r(
+                "button",
+                {
+                  type: "button",
+                  class: P1.value === e ? "tab on" : "tab",
+                  onClick: () => { P1.value = e; },
+                  children: [
+                    e === 0 ? "属性" : Fe[e],
+                    s > 0 && r("b", { class: "badge", children: s }),
+                  ],
+                },
+                e,
+              );
+            }),
           }),
           r("div", {
             class: "tabs row-filter",
             style: "margin-top:0.35rem;",
-            children: [
-              r("span", { class: "filter-label", children: "类型" }),
-              FORM_TABS.map((f) => {
-                const s = f.id === 0
-                  ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
-                  : Object.entries(ae.value).reduce((acc, [id, qty]) => {
-                      if (!qty) return acc;
-                      const eq = cl.get(Number(id));
-                      return eq && getEquipForms(eq).includes(f.id) ? acc + qty : acc;
-                    }, 0);
-                return r(
-                  "button",
-                  {
-                    type: "button",
-                    class: FormFilter.value === f.id ? "tab on form-tab" : "tab form-tab",
-                    onClick: () => { FormFilter.value = f.id; },
-                    children: [
-                      f.name,
-                      s > 0 && r("b", { class: "badge", children: s }),
-                    ],
-                  },
-                  f.id,
-                );
-              }),
-            ],
+            children: FORM_TABS.map((f) => {
+              const s = f.id === 0
+                ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
+                : Object.entries(ae.value).reduce((acc, [id, qty]) => {
+                    if (!qty) return acc;
+                    const eq = cl.get(Number(id));
+                    return eq && getEquipForms(eq).includes(f.id) ? acc + qty : acc;
+                  }, 0);
+              return r(
+                "button",
+                {
+                  type: "button",
+                  class: FormFilter.value === f.id ? "tab on form-tab" : "tab form-tab",
+                  onClick: () => { FormFilter.value = f.id; },
+                  children: [
+                    f.name,
+                    s > 0 && r("b", { class: "badge", children: s }),
+                  ],
+                },
+                f.id,
+              );
+            }),
           }),
           r("div", {
             class: "row wrap small tools",
@@ -6982,7 +6976,7 @@ function Il() {
                             children: [
                               r(xs, { equip: s, descKey: `cat:${e.key}` }),
                               r("b", {
-                                class: s.id === 250104 ? "form-tag dou-tag" : "form-tag",
+                                class: "form-tag",
                                 children: getEquipFormLabel(s),
                               }),
                               n > 0 && r("b", { class: "owned", children: n }),
@@ -7350,7 +7344,6 @@ function bl() {
                       r("div", { style: "margin-top:0.15rem;", children: "• 蓝色神器（3格）：1觉三围+20%；3觉三围+30%（累计+50%）；5觉每有一件相邻同属性法宝获得高额加成（攻击+40%/生命+120%/防御+200%）。2/4觉无效果。" }),
                       r("div", { style: "margin-top:0.15rem;", children: "• 紫色神器（4格）：1觉每有一件相邻同属性法宝增加属性；2觉三围+20%；3觉相邻同属性法宝三围+8%；4觉三围+30%（累计+50%）；5觉强化为相邻同属性法宝三围+15%。" }),
                       r("div", { style: "margin-top:0.15rem;", children: "• 金色神器（5格）：1觉每有一件相邻同属性法宝增加属性；2觉三围+20%；3觉全包同类型【刀剑枪乐异御锤幡斗】法宝三围+20%；4觉三围+30%（累计+50%）；5觉全包同属性法宝三围+15%。" }),
-                      r("div", { style: "margin-top:0.15rem;color:var(--accent);font-weight:600;", children: "※ 孙悟空武器【如意金箍棒】为【斗·枪】双类型，享受与提供斗、枪双向同类型加成。" }),
                       r("div", { style: "margin-top:0.35rem;padding-top:0.25rem;border-top:1px dashed var(--border);color:var(--text-muted);font-size:0.8rem;", children: "💬 如有觉醒规则调整或数据纠错，欢迎联系 QQ：3265808894" }),
                     ],
                   }),
@@ -8333,18 +8326,6 @@ Ka(r(Pl, {}), Ha);
   flex-wrap: wrap;
   gap: 0.25rem;
 }
-.filter-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.12rem 0.45rem;
-  border-radius: 4px;
-  background: var(--bg-hover, rgba(120, 120, 120, 0.12));
-  color: var(--text-muted, #888);
-  margin-right: 0.2rem;
-  flex-shrink: 0;
-  letter-spacing: 0.05em;
-  user-select: none;
-}
 .tab.form-tab {
   padding: 0.2rem 0.45rem;
   font-size: 0.78rem;
@@ -8363,13 +8344,7 @@ Ka(r(Pl, {}), Ha);
   vertical-align: middle;
   line-height: 1.2;
 }
-/* 如意金箍棒【斗·枪】特殊高光徽章 */
-.form-tag.dou-tag {
-  background: rgba(234, 88, 12, 0.15);
-  color: #ea580c;
-  border: 1px solid rgba(234, 88, 12, 0.4);
-  font-weight: 700;
-}
+
 /* 8大属性高辨识度配色，尤其确保金与土区分鲜明 */
 :root {
   --el1: #f59e0b; /* 金：明亮金黄/琥珀纯金，光彩鲜明耀眼 */
