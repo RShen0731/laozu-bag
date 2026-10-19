@@ -1496,7 +1496,7 @@ const z = JSON.parse(
     10: "斗",
   },
   FORM_TABS = [
-    { id: 0, name: "类型" },
+    { id: 0, name: "器" },
     { id: 7, name: "刀" },
     { id: 2, name: "剑" },
     { id: 6, name: "枪" },
@@ -6681,7 +6681,7 @@ const ml = (t) =>
     )?.tiers ?? [t],
   mt = C({}),
   ft = C({}),
-  z0 = C(!0),
+  z0 = C(!1),
   U0 = C(!1),
   G0 = C(!0),
   Y0 = C(!0),
@@ -6902,54 +6902,59 @@ function Il() {
             ],
           }),
           r("div", {
-            class: "tabs row-filter",
-            children: [0, 1, 2, 3, 4, 5, 6, 7, 8].map((e) => {
-              const s = e === 0
-                ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
-                : (p1.get(e) ?? []).reduce(
-                    (a, n) => a + n.tiers.reduce((l, i) => l + (ae.value[i.id] ?? 0), 0),
-                    0,
-                  );
-              return r(
-                "button",
-                {
-                  type: "button",
-                  class: P1.value === e ? "tab on" : "tab",
-                  onClick: () => { P1.value = e; },
-                  children: [
-                    e === 0 ? "属性" : Fe[e],
-                    s > 0 && r("b", { class: "badge", children: s }),
-                  ],
-                },
-                e,
-              );
-            }),
-          }),
-          r("div", {
-            class: "tabs row-filter",
-            style: "margin-top:0.35rem;",
-            children: FORM_TABS.map((f) => {
-              const s = f.id === 0
-                ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
-                : Object.entries(ae.value).reduce((acc, [id, qty]) => {
-                    if (!qty) return acc;
-                    const eq = cl.get(Number(id));
-                    return eq && getEquipForms(eq).includes(f.id) ? acc + qty : acc;
-                  }, 0);
-              return r(
-                "button",
-                {
-                  type: "button",
-                  class: FormFilter.value === f.id ? "tab on form-tab" : "tab form-tab",
-                  onClick: () => { FormFilter.value = f.id; },
-                  children: [
-                    f.name,
-                    s > 0 && r("b", { class: "badge", children: s }),
-                  ],
-                },
-                f.id,
-              );
-            }),
+            class: "tabs row-filter single-row",
+            children: [
+              ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map((e) => {
+                const s = e === 0
+                  ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
+                  : (p1.get(e) ?? []).reduce(
+                      (a, n) => a + n.tiers.reduce((l, i) => l + (ae.value[i.id] ?? 0), 0),
+                      0,
+                    );
+                return r(
+                  "button",
+                  {
+                    type: "button",
+                    class: [
+                      P1.value === e ? "tab on" : "tab",
+                      e === 0 ? "tab-all-btn tab-all-elem" : "",
+                    ].filter(Boolean).join(" "),
+                    onClick: () => { P1.value = e; },
+                    children: [
+                      e === 0 ? "属" : Fe[e],
+                      s > 0 && r("b", { class: "badge", children: s }),
+                    ],
+                  },
+                  `elem-${e}`,
+                );
+              }),
+              r("span", { class: "filter-divider" }),
+              ...FORM_TABS.map((f) => {
+                const s = f.id === 0
+                  ? Object.values(ae.value).reduce((a, b) => a + (b || 0), 0)
+                  : Object.entries(ae.value).reduce((acc, [id, qty]) => {
+                      if (!qty) return acc;
+                      const eq = cl.get(Number(id));
+                      return eq && getEquipForms(eq).includes(f.id) ? acc + qty : acc;
+                    }, 0);
+                return r(
+                  "button",
+                  {
+                    type: "button",
+                    class: [
+                      FormFilter.value === f.id ? "tab on form-tab" : "tab form-tab",
+                      f.id === 0 ? "tab-all-btn tab-all-form" : "",
+                    ].filter(Boolean).join(" "),
+                    onClick: () => { FormFilter.value = f.id; },
+                    children: [
+                      f.name,
+                      s > 0 && r("b", { class: "badge", children: s }),
+                    ],
+                  },
+                  `form-${f.id}`,
+                );
+              }),
+            ],
           }),
           r("div", {
             class: "row wrap small tools",
@@ -8330,14 +8335,23 @@ Ka(r(Pl, {}), Ha);
 @media(prefers-color-scheme:dark){.elder-select.awaken-on{color:#c084fc;border-color:currentColor}.star-tag.awaken-tag{color:#c084fc;background:rgba(192,132,252,.15)}.awaken-hint-bar{background:rgba(192,132,252,.12);border-color:rgba(192,132,252,.35);color:#e9d5ff}}
 .scope.global{background:#9b51e0}
 
-/* 双行筛选容器与标签：移动端+PC端全适配紧凑布局，减少边距防挤压 */
-.tabs.row-filter {
+/* 单行筛选栏：单行横向丝滑滑动展示完所有属性与器型 */
+.tabs.row-filter.single-row {
   display: flex !important;
   align-items: center !important;
-  flex-wrap: wrap !important;
-  gap: 0.22rem 0.28rem !important;
-  margin-bottom: 0.3rem !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  gap: 0.22rem !important;
+  padding: 4px 2px 6px !important;
+  margin-bottom: 0.25rem !important;
+  scrollbar-width: none !important;
 }
+.tabs.row-filter.single-row::-webkit-scrollbar {
+  display: none !important;
+}
+
 .tabs.row-filter .tab {
   position: relative !important;
   overflow: visible !important;
@@ -8348,7 +8362,7 @@ Ka(r(Pl, {}), Ha);
   min-height: 28px !important;
   max-height: 28px !important;
   line-height: 28px !important;
-  padding: 0 0.45rem !important;
+  padding: 0 0.42rem !important;
   font-size: 0.8rem !important;
   white-space: nowrap !important;
   box-sizing: border-box !important;
@@ -8359,6 +8373,31 @@ Ka(r(Pl, {}), Ha);
   padding: 0 0.32rem !important;
   font-size: 0.75rem !important;
   min-width: 24px !important;
+}
+
+/* “属”和“器”的专属突出样式：区别于其它普通单项按钮 */
+.tab.tab-all-btn {
+  font-weight: 700 !important;
+  border: 1.5px solid var(--accent, #d4a53a) !important;
+  color: var(--accent, #d4a53a) !important;
+  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
+  border-radius: 4px !important;
+  min-width: 26px !important;
+}
+.tab.tab-all-btn.on {
+  background: var(--accent, #d4a53a) !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 45%, transparent) !important;
+}
+
+/* 属性与器型之间的精美竖向分割条 */
+.filter-divider {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  background: var(--line, rgba(120, 120, 120, 0.35));
+  margin: 0 0.18rem;
+  flex-shrink: 0;
 }
 
 /* 筛选栏右上角红点数字徽章：电脑端与手机端全适配统一规范 */
@@ -8388,6 +8427,113 @@ Ka(r(Pl, {}), Ha);
   .tabs.row-filter .tab .badge,
   .tabs .tab .badge {
     border: 1.5px solid #1f2937 !important;
+  }
+}
+
+/* 移动端法宝列表卡片三行紧凑布局 */
+@media (max-width: 700px) {
+  .tbl.catalog tr, .tbl.selected tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    grid-template-areas:
+      "name name shape"
+      "tier qty act"
+      "base base base"
+      "buff buff buff" !important;
+    gap: 0.18rem 0.35rem !important;
+    align-items: center !important;
+    padding: 0.22rem 0.12rem !important; /* 整个卡片的内间距再减少 */
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  /* 第一行：法宝名称 + 长老名称 + 类型 + 数量 + 形状 */
+  .tbl td.name {
+    grid-area: name !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.2rem !important;
+    min-width: 0 !important;
+    line-height: 1.25 !important;
+  }
+  .tbl td.name .ename {
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+  }
+  .tbl td.col-shape {
+    grid-area: shape !important;
+    justify-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.2rem !important;
+  }
+
+  /* 第二行：阶数 + 步进器 + 添加按钮 */
+  .tbl td.col-tier {
+    grid-area: tier !important;
+    justify-self: start !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .tbl td.col-qty {
+    grid-area: qty !important;
+    justify-self: center !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .tbl td.col-act {
+    grid-area: act !important;
+    justify-self: end !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* 第二行控件高度精简，紧凑精致 */
+  .tbl td.col-tier button,
+  .tbl td.col-tier select,
+  .tier-tag {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    line-height: 26px !important;
+    font-size: 0.76rem !important;
+    padding: 0 0.45rem !important;
+  }
+  .tbl td.col-qty .stepper {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+  }
+  .tbl td.col-qty .stepper button {
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    line-height: 26px !important;
+  }
+  .tbl td.col-qty .stepper input {
+    height: 26px !important;
+    min-height: 26px !important;
+    font-size: 0.8rem !important;
+    width: 2.2rem !important;
+  }
+  .tbl td.col-act button.add {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    line-height: 26px !important;
+    padding: 0 0.85rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* 第三行：属性和说明（默认不展示） */
+  .tbl td.col-base {
+    grid-area: base !important;
+    padding-top: 0.1rem !important;
+  }
+  .tbl td.col-buff {
+    grid-area: buff !important;
+    padding-top: 0.1rem !important;
   }
 }
 
