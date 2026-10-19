@@ -7282,59 +7282,38 @@ function bl() {
                               ),
                             ],
                           }),
-                        // 觉醒选择器（同一行）
+                        // 觉醒选择器（同一行，仅保留下拉框）
                         awData
-                          ? r(R, {
+                          ? r("select", {
+                              class:
+                                curAw > 0
+                                  ? "elder-select on awaken-on"
+                                  : "elder-select",
+                              value: String(curAw),
+                              onChange: (a) =>
+                                setAwakenLevel(e.id, Number(a.target.value)),
+                              title: "法宝觉醒等级",
                               children: [
-                                r("select", {
-                                  class:
-                                    curAw > 0
-                                      ? "elder-select on awaken-on"
-                                      : "elder-select",
-                                  value: String(curAw),
-                                  onChange: (a) =>
-                                    setAwakenLevel(e.id, Number(a.target.value)),
-                                  title: "法宝觉醒等级",
-                                  children: [
-                                    r("option", {
-                                      value: "0",
-                                      children: "未觉醒",
-                                    }),
-                                    Array.from(
-                                      { length: awData.maxLevel || 5 },
-                                      (a, n) => n + 1,
-                                    ).map((a) =>
-                                      r(
-                                        "option",
-                                        {
-                                          value: String(a),
-                                          children: `觉醒${a}`,
-                                        },
-                                        a,
-                                      ),
-                                    ),
-                                  ],
+                                r("option", {
+                                  value: "0",
+                                  children: "未觉醒",
                                 }),
-                                curAw > 0 &&
-                                  r("b", {
-                                    class: "star-tag awaken-tag",
-                                    children: [`觉${curAw}`],
-                                  }),
-                                curAw > 0 &&
-                                  r("span", {
-                                    class: "muted small nowrap",
-                                    style: "color:var(--muted);",
-                                    children: awakenDescMap[curAw] || "",
-                                  }),
+                                Array.from(
+                                  { length: awData.maxLevel || 5 },
+                                  (a, n) => n + 1,
+                                ).map((a) =>
+                                  r(
+                                    "option",
+                                    {
+                                      value: String(a),
+                                      children: `觉醒${a}`,
+                                    },
+                                    a,
+                                  ),
+                                ),
                               ],
                             })
-                          : isElderT5
-                            ? r("span", {
-                                class: "muted small",
-                                style: "color:var(--warn);",
-                                children: "觉醒缺失",
-                              })
-                            : null,
+                          : null,
                       ],
                     },
                     e.id,
@@ -7359,6 +7338,7 @@ function bl() {
                       r("div", { style: "margin-top:0.15rem;", children: "• 紫色神器（4格）：1觉每有一件相邻同属性法宝增加属性；2觉三围+20%；3觉相邻同属性法宝三围+8%；4觉三围+30%（累计+50%）；5觉强化为相邻同属性法宝三围+15%。" }),
                       r("div", { style: "margin-top:0.15rem;", children: "• 金色神器（5格）：1觉每有一件相邻同属性法宝增加属性；2觉三围+20%；3觉全包同类型【刀剑枪乐异御锤幡斗】法宝三围+20%；4觉三围+30%（累计+50%）；5觉全包同属性法宝三围+15%。" }),
                       r("div", { style: "margin-top:0.15rem;color:var(--accent);font-weight:600;", children: "※ 孙悟空武器【如意金箍棒】为【斗·枪】双类型，享受与提供斗、枪双向同类型加成。" }),
+                      r("div", { style: "margin-top:0.35rem;padding-top:0.25rem;border-top:1px dashed var(--border);color:var(--text-muted);font-size:0.8rem;", children: "💬 如有觉醒规则调整或数据纠错，欢迎联系 QQ：3265808894" }),
                     ],
                   }),
                 ],
