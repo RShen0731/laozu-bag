@@ -4162,7 +4162,7 @@ function Pr({
               {
                 class: `cell piece q${T.tier}${P ? " dim" : ""}${e === M ? " sel" : ""}`,
                 style: { boxShadow: D(p, w) },
-                title: `#${M + 1} ${T.name}【${getEquipFormLabel(cl.get(T.equipId) || T)}】${T1(T.tier)} · ${Fe[T.element]}系`,
+                title: `#${M + 1} ${T.name}${(cl.get(T.equipId) || T).elder?.name ? ` (${(cl.get(T.equipId) || T).elder.name})` : ''}【${getEquipFormLabel(cl.get(T.equipId) || T)}】${T1(T.tier)} · ${Fe[T.element]}系`,
                 onClick: () => s(e === M ? null : M),
                 children:
                   N.get(M) === q &&
@@ -4201,6 +4201,10 @@ function Pr({
                       p + 1,
                       " ",
                       _.name,
+                      (cl.get(_.equipId) || _).elder?.name && r("span", {
+                        class: "elder-name",
+                        children: [" (", (cl.get(_.equipId) || _).elder.name, ")"],
+                      }),
                       r("b", {
                         class: "legend-form-tag",
                         children: getEquipFormLabel(cl.get(_.equipId) || _),
@@ -6778,7 +6782,10 @@ function xs({ equip: t, descKey: e }) {
         class: "ename",
         title: a,
         onClick: () => (f0.value = n ? null : e),
-        children: t.name,
+        children: [
+          t.name,
+          t.elder?.name ? r("span", { class: "elder-name", children: ` (${t.elder.name})` }) : null,
+        ],
       }),
       n &&
         r("div", {
@@ -8324,11 +8331,61 @@ Ka(r(Pl, {}), Ha);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.35rem 0.45rem;
+  margin-bottom: 0.25rem;
+}
+.tabs.row-filter .tab {
+  position: relative !important;
+  overflow: visible !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  padding: 0 0.6rem !important;
+  font-size: 0.82rem !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
 }
 .tab.form-tab {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.78rem;
+  padding: 0 0.45rem !important;
+  font-size: 0.78rem !important;
+}
+
+/* 筛选栏右上角红点数字徽章：解决手机端折行与高矮不齐 */
+.tabs.row-filter .tab .badge {
+  position: absolute !important;
+  top: -5px !important;
+  right: -5px !important;
+  min-width: 15px !important;
+  height: 15px !important;
+  border-radius: 999px !important;
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  line-height: 15px !important;
+  text-align: center !important;
+  padding: 0 3px !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+  pointer-events: none !important;
+  z-index: 5 !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+@media (prefers-color-scheme: dark) {
+  .tabs.row-filter .tab .badge {
+    border: 1.5px solid #1f2937 !important;
+  }
+}
+
+/* 长老名称标识 */
+.elder-name {
+  font-size: 0.82em;
+  color: var(--text-muted, #71717a);
+  font-weight: 500;
+  margin-left: 2px;
 }
 
 /* 法宝列表表格中的类型徽章 */
