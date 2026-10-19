@@ -1473,8 +1473,18 @@ const z = JSON.parse(
     9: "幡",
   },
   na = (t) => yt[t] ?? "其他",
+  isSingleCellEquip = (eq) => {
+    if (!eq) return false;
+    if (eq.cells && eq.cells.length === 1) return true;
+    if (eq.shapeId) {
+      const sh = Ca.get(eq.shapeId);
+      if (sh && sh.cells && sh.cells.length === 1) return true;
+    }
+    return eq.weaponForm === 0;
+  },
   FORM_NAMES = {
-    0: "其他",
+    0: "珠",
+    1: "珠",
     7: "刀",
     2: "剑",
     6: "枪",
@@ -1496,16 +1506,25 @@ const z = JSON.parse(
     { id: 8, name: "锤" },
     { id: 9, name: "幡" },
     { id: 10, name: "斗" },
+    { id: 1, name: "珠" },
   ],
   getEquipForms = (eq) => {
-    if (!eq) return [0];
+    if (!eq) return [1];
     if (eq.id === 250104 || eq.name?.includes("如意金箍棒")) return [6, 10]; // 枪 + 斗
-    return [eq.weaponForm ?? 0];
+    if (isSingleCellEquip(eq)) return [1]; // 单格归纳为珠
+    return [eq.weaponForm ?? 1];
   },
   getEquipFormLabel = (eq) => {
-    if (!eq) return "其他";
+    if (!eq) return "珠";
     if (eq.id === 250104 || eq.name?.includes("如意金箍棒")) return "斗·枪";
-    return FORM_NAMES[eq.weaponForm] || na(eq.weaponForm) || "其他";
+    if (isSingleCellEquip(eq)) return "珠";
+    return FORM_NAMES[eq.weaponForm] || na(eq.weaponForm) || "珠";
+  },
+  getBoardFormChar = (eq) => {
+    if (!eq) return "珠";
+    if (eq.id === 250104 || eq.name?.includes("如意金箍棒")) return "枪"; // 金箍棒在摆盘只展示枪！
+    if (isSingleCellEquip(eq)) return "珠"; // 单格归纳为珠！
+    return FORM_NAMES[eq.weaponForm] || "珠";
   },
   a1 = 2001,
   o0 = 2002,
@@ -4151,13 +4170,7 @@ function Pr({
                     children: [
                       r("span", {
                         class: `cell-el el${T.element}`,
-                        children: [
-                          Fe[T.element],
-                          r("span", {
-                            class: "cell-form-badge",
-                            children: getEquipFormLabel(cl.get(T.equipId) || T),
-                          }),
-                        ],
+                        children: getBoardFormChar(cl.get(T.equipId) || T),
                       }),
                       r("span", { class: "cell-num", children: M + 1 }),
                     ],
@@ -8357,29 +8370,39 @@ Ka(r(Pl, {}), Ha);
   border: 1px solid rgba(234, 88, 12, 0.4);
   font-weight: 700;
 }
-@media (prefers-color-scheme: dark) {
-  .form-tag.dou-tag {
-    background: rgba(251, 146, 60, 0.2);
-    color: #fb923c;
-    border-color: rgba(251, 146, 60, 0.5);
-  }
+/* 8大属性高辨识度配色，尤其确保金与土区分鲜明 */
+:root {
+  --el1: #f59e0b; /* 金：明亮金黄/琥珀纯金，光彩鲜明耀眼 */
+  --el2: #15803d; /* 木：浓郁生机翡翠绿 */
+  --el3: #0284c7; /* 水：深邃清澈蓝 */
+  --el4: #dc2626; /* 火：热烈鲜红 */
+  --el5: #713f12; /* 土：深沉浓厚大地棕褐，与金的明黄有强烈的明度与色调差，绝不混淆 */
+  --el6: #7c3aed; /* 雷：电掣亮紫 */
+  --el7: #c026d3; /* 邪：魅惑紫红 */
+  --el8: #475569; /* 体：刚韧玄铁青灰 */
 }
 
-/* 背包摆盘网格中的法宝类型展示 */
+/* 摆盘网格中的圆形 tips 徽章样式：正圆、白边框、白文字、属性背景色 */
 .cell-el {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.cell-form-badge {
-  display: block;
-  font-size: 0.58rem;
-  font-weight: normal;
-  opacity: 0.85;
-  line-height: 1;
-  margin-top: 1px;
-  transform: scale(0.92);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 9.5px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
+  box-sizing: border-box !important;
+  pointer-events: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6) !important;
+  letter-spacing: -0.5px;
 }
 
 /* 背包下方图例中的法宝类型展示 */
