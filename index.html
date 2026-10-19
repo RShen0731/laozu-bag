@@ -3301,7 +3301,7 @@ const ae = C({}),
   De = C(Array(x1).fill(0)),
   He = C(8e3),
   Xe = C(1),
-  P1 = C(0),
+  P1 = C(1),
   FormFilter = C(0),
   c1 = C(St()),
   Be = C("edit"),
@@ -6741,7 +6741,11 @@ function Fs({ value: t, onChange: e }) {
   });
 }
 function Bs({ equip: t, star: e, talents: s, compact: a = !1 }) {
-  const n = X1(t, e, s);
+  const n = {
+    atk: t.base?.find((x) => x.attr === 2001)?.value ?? 0,
+    def: t.base?.find((x) => x.attr === 2002)?.value ?? 0,
+    hp: t.base?.find((x) => x.attr === 2003)?.value ?? 0,
+  };
   const awLv = AwakenState?.value?.[t.id] ?? 0;
   return r("div", {
     class: a ? "stats inline" : "stats",
@@ -8326,13 +8330,13 @@ Ka(r(Pl, {}), Ha);
 @media(prefers-color-scheme:dark){.elder-select.awaken-on{color:#c084fc;border-color:currentColor}.star-tag.awaken-tag{color:#c084fc;background:rgba(192,132,252,.15)}.awaken-hint-bar{background:rgba(192,132,252,.12);border-color:rgba(192,132,252,.35);color:#e9d5ff}}
 .scope.global{background:#9b51e0}
 
-/* 双行筛选容器与标签 */
+/* 双行筛选容器与标签：移动端+PC端全适配紧凑布局，减少边距防挤压 */
 .tabs.row-filter {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.45rem;
-  margin-bottom: 0.25rem;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 0.22rem 0.28rem !important;
+  margin-bottom: 0.3rem !important;
 }
 .tabs.row-filter .tab {
   position: relative !important;
@@ -8340,31 +8344,37 @@ Ka(r(Pl, {}), Ha);
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 30px !important;
-  line-height: 30px !important;
-  padding: 0 0.6rem !important;
-  font-size: 0.82rem !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 0.45rem !important;
+  font-size: 0.8rem !important;
   white-space: nowrap !important;
   box-sizing: border-box !important;
+  border-radius: 4px !important;
+  flex: 0 0 auto !important;
 }
-.tab.form-tab {
-  padding: 0 0.45rem !important;
-  font-size: 0.78rem !important;
+.tabs.row-filter .tab.form-tab {
+  padding: 0 0.32rem !important;
+  font-size: 0.75rem !important;
+  min-width: 24px !important;
 }
 
-/* 筛选栏右上角红点数字徽章：解决手机端折行与高矮不齐 */
-.tabs.row-filter .tab .badge {
+/* 筛选栏右上角红点数字徽章：电脑端与手机端全适配统一规范 */
+.tabs.row-filter .tab .badge,
+.tabs .tab .badge {
   position: absolute !important;
   top: -5px !important;
   right: -5px !important;
-  min-width: 15px !important;
-  height: 15px !important;
+  min-width: 14px !important;
+  height: 14px !important;
   border-radius: 999px !important;
   background-color: #ef4444 !important;
   color: #ffffff !important;
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
-  line-height: 15px !important;
+  line-height: 14px !important;
   text-align: center !important;
   padding: 0 3px !important;
   border: 1.5px solid #ffffff !important;
@@ -8375,7 +8385,8 @@ Ka(r(Pl, {}), Ha);
   box-sizing: border-box !important;
 }
 @media (prefers-color-scheme: dark) {
-  .tabs.row-filter .tab .badge {
+  .tabs.row-filter .tab .badge,
+  .tabs .tab .badge {
     border: 1.5px solid #1f2937 !important;
   }
 }
