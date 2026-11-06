@@ -6788,28 +6788,17 @@ typeof document < "u" &&
         (f0.value = null));
   });
 const vl = new Map(z.tips.map((t) => [t.id, t]));
-const hoverDescKey = C(null);
-const otSigIds = new Set(ot.map((s) => s.equipId));
-
 function xs({ equip: t, descKey: e }) {
-  const s = (t.tipIds || []).map((l) => vl.get(l)).filter((l) => !!l),
-    a = [t.desc, ...s.map((l) => `${l.name}：${l.desc}`)].join("\n"),
-    isOpen = f0.value === e,
-    isHover = hoverDescKey.value === e,
-    n = isOpen || isHover,
-    hasSig = otSigIds.has(t.id),
-    sh = Ca.get(t.shapeId);
-
+  const s = t.tipIds.map((l) => vl.get(l)).filter((l) => !!l),
+    a = [t.desc, ...s.map((l) => `${l.name}：${l.desc}`)].join(`
+`),
+    n = f0.value === e;
   return r(R, {
     children: [
       r("span", {
-        class: n ? "ename hover-on" : "ename",
+        class: "ename",
         title: a,
-        onClick: () => (f0.value = isOpen ? null : e),
-        onMouseEnter: () => (hoverDescKey.value = e),
-        onMouseLeave: () => {
-          if (hoverDescKey.value === e) hoverDescKey.value = null;
-        },
+        onClick: () => (f0.value = n ? null : e),
         children: [
           t.name,
           t.elder?.name ? r("span", { class: "elder-name", children: ` (${t.elder.name})` }) : null,
@@ -6817,86 +6806,18 @@ function xs({ equip: t, descKey: e }) {
       }),
       n &&
         r("div", {
-          class: "equip-desc equip-card small",
-          onMouseEnter: () => (hoverDescKey.value = e),
-          onMouseLeave: () => {
-            if (hoverDescKey.value === e) hoverDescKey.value = null;
-          },
+          class: "equip-desc small",
           children: [
-            r("div", {
-              class: "equip-desc-header",
-              children: [
-                r("div", {
-                  class: "equip-img-box",
-                  children: [
-                    r("img", {
-                      class: "equip-img",
-                      src: `images/equips/${t.id}.png`,
-                      alt: t.name,
-                      style: "display:none;",
-                      onLoad: (ev) => {
-                        ev.target.style.display = "block";
-                        const fb = ev.target.nextElementSibling;
-                        if (fb) fb.style.display = "none";
-                      },
-                      onError: (ev) => {
-                        if (!ev.target.dataset.triedName) {
-                          ev.target.dataset.triedName = "1";
-                          ev.target.src = `images/equips/${encodeURIComponent(t.name)}.png`;
-                        } else {
-                          ev.target.style.display = "none";
-                          const fb = ev.target.nextElementSibling;
-                          if (fb) fb.style.display = "flex";
-                        }
-                      },
-                    }),
-                    r("div", {
-                      class: `equip-img-fallback el${t.element}`,
-                      children: [
-                        r("span", { class: "fb-el", children: Fe[t.element] || "" }),
-                        r("span", { class: "fb-form", children: getBoardFormChar(t) }),
-                      ],
-                    }),
-                  ],
-                }),
-                r("div", {
-                  class: "equip-desc-main",
-                  children: [
-                    r("div", {
-                      class: "equip-desc-title-row",
-                      children: [
-                        r("b", { class: "equip-desc-name", children: t.name }),
-                        t.elder?.name ? r("span", { class: "elder-name", children: ` (${t.elder.name})` }) : null,
-                        sh && r(pt, { shape: sh, tier: t.tier, size: 7 }),
-                      ],
-                    }),
-                    r("div", {
-                      class: "equip-desc-meta-tags",
-                      children: [
-                        r("span", { class: `desc-pill el-tag el${t.element}`, children: `${Fe[t.element]}系` }),
-                        r("span", { class: "desc-pill form-tag", children: getEquipFormLabel(t) }),
-                        r("span", { class: "desc-pill tier-tag", children: T1(t.tier) }),
-                        t.reson ? r("span", { class: "desc-pill reson-tag", children: `共鸣 ${t.reson}` }) : null,
-                        hasSig
-                          ? r("span", { class: "desc-pill sig-pill has-sig", children: "✓ 截图特征已录入" })
-                          : r("span", { class: "desc-pill sig-pill no-sig", title: `法宝ID: ${t.id}`, children: "待提供图片核对" }),
-                      ],
-                    }),
-                  ],
-                }),
-              ],
-            }),
-            r("div", { class: "desc-divider" }),
             r("div", { class: "desc-text", children: t.desc }),
             s.map((l) =>
               r(
                 "div",
-                { class: "muted tip-row", children: [r("b", { children: `【${l.name}】` }), l.desc] },
+                { class: "muted", children: [l.name, "：", l.desc] },
                 l.id,
               ),
             ),
             t.feature &&
-              r("div", { class: "muted feature-row", children: [r("span", { class: "dim", children: "特性：" }), t.feature] }),
+              r("div", { class: "muted", children: ["特性：", t.feature] }),
           ],
         }),
     ],
@@ -8722,134 +8643,5 @@ Ka(r(Pl, {}), Ha);
   color: var(--text-muted, #777);
   margin: 0 0.3rem;
   font-weight: 500;
-}
-
-/* 法宝描述悬浮卡片增强与图片展示 */
-.ename {
-  cursor: pointer !important;
-  transition: color 0.15s ease !important;
-}
-.ename:hover, .ename.hover-on {
-  color: var(--accent, #d4a53a) !important;
-  text-decoration: underline !important;
-}
-.equip-desc.equip-card {
-  position: absolute !important;
-  left: 0 !important;
-  top: 100% !important;
-  z-index: 99 !important;
-  margin-top: 4px !important;
-  padding: 0.65rem 0.8rem !important;
-  background: var(--panel, #ffffff) !important;
-  border: 1px solid var(--border, #e2e8f0) !important;
-  border-left: 3px solid var(--accent, #d4a53a) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22), 0 3px 8px rgba(0, 0, 0, 0.08) !important;
-  min-width: 300px !important;
-  max-width: 380px !important;
-  pointer-events: auto !important;
-}
-@media (prefers-color-scheme: dark) {
-  .equip-desc.equip-card {
-    background: #1e293b !important;
-    border-color: #334155 !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5) !important;
-  }
-}
-.equip-desc-header {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.65rem !important;
-}
-.equip-img-box {
-  width: 54px !important;
-  height: 54px !important;
-  min-width: 54px !important;
-  border-radius: 6px !important;
-  overflow: hidden !important;
-  border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
-  background: rgba(0, 0, 0, 0.04) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.1) !important;
-}
-.equip-img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-.equip-img-fallback {
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  line-height: 1.1 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
-}
-.equip-img-fallback .fb-el {
-  font-size: 11px !important;
-  opacity: 0.9 !important;
-}
-.equip-img-fallback .fb-form {
-  font-size: 17px !important;
-}
-.equip-desc-main {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-}
-.equip-desc-title-row {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.35rem !important;
-  flex-wrap: wrap !important;
-}
-.equip-desc-name {
-  font-size: 0.92rem !important;
-  color: var(--text, #0f172a) !important;
-}
-.equip-desc-meta-tags {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.25rem !important;
-  flex-wrap: wrap !important;
-  margin-top: 0.25rem !important;
-}
-.desc-pill {
-  font-size: 0.72rem !important;
-  padding: 0.05rem 0.32rem !important;
-  border-radius: 4px !important;
-  line-height: 1.25 !important;
-  font-weight: 600 !important;
-  background: var(--bg, #f1f5f9) !important;
-  color: var(--text-muted, #64748b) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
-.desc-pill.sig-pill.has-sig {
-  background: rgba(34, 197, 94, 0.15) !important;
-  color: #16a34a !important;
-  border-color: rgba(34, 197, 94, 0.35) !important;
-}
-.desc-pill.sig-pill.no-sig {
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #d97706 !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
-}
-.desc-divider {
-  height: 1px !important;
-  background: var(--line, #e2e8f0) !important;
-  margin: 0.45rem 0 !important;
-}
-.equip-desc .tip-row {
-  margin-top: 0.2rem !important;
-  line-height: 1.35 !important;
-}
-.equip-desc .feature-row {
-  margin-top: 0.25rem !important;
-  font-style: italic !important;
 }
 </style></head><body><div id="app"></div></body></html>
