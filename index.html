@@ -3302,17 +3302,19 @@ const ae = C({}),
   Xe = C(1),
   P1 = C(1),
   FormFilter = C(0),
+  BASE_PV = 19,
+  BASE_UV = 17,
   sitePv = C((() => {
     try {
       const v = localStorage.getItem("laozu-bag-pv");
-      return v ? Number(v).toLocaleString() : "19";
-    } catch { return "19"; }
+      return v ? Number(v).toLocaleString() : String(BASE_PV);
+    } catch { return String(BASE_PV); }
   })()),
   siteUv = C((() => {
     try {
       const v = localStorage.getItem("laozu-bag-uv");
-      return v ? Number(v).toLocaleString() : "17";
-    } catch { return "17"; }
+      return v ? Number(v).toLocaleString() : String(BASE_UV);
+    } catch { return String(BASE_UV); }
   })()),
   updateBsz = (pv, uv) => {
     if (pv !== undefined && pv !== null && pv !== "") {
@@ -3332,26 +3334,54 @@ const ae = C({}),
   },
   triggerBsz = (() => {
     let loading = false;
-    return (force = false) => {
+    return async (force = false) => {
       if (typeof window === "undefined") return;
       if (loading && !force) return;
       loading = true;
+
+      // 1. 优先使用国内高性能阿里云节点 (Golang+Redis，绝不 502)
+      try {
+        const idKey = "laozu-bsz-identity";
+        let identity = "";
+        try { identity = localStorage.getItem(idKey) || ""; } catch {}
+        const headers = {
+          "x-bsz-referer": window.location.href || "https://rshen0731.github.io/laozu-bag/",
+        };
+        if (identity) headers["Authorization"] = "Bearer " + identity;
+        const res = await fetch("https://bsz.iirose.cn/api", {
+          method: "POST",
+          headers,
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.success && json.data) {
+            const newPv = BASE_PV + (json.data.site_pv || 0);
+            const newUv = BASE_UV + (json.data.site_uv || 0);
+            updateBsz(newPv, newUv);
+            const newId = res.headers.get("Set-Bsz-Identity");
+            if (newId) {
+              try { localStorage.setItem(idKey, newId); } catch {}
+            }
+            loading = false;
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. 备用通道：官方 jsonp
       try {
         const cbName = "BusuanziCallback_" + Math.floor(1e11 * Math.random());
         window[cbName] = (d) => {
           loading = false;
           try {
-            if (d) updateBsz(d.site_pv, d.site_uv);
+            if (d && d.site_pv) updateBsz(d.site_pv, d.site_uv);
           } catch (e) {}
           try { delete window[cbName]; } catch (e) {}
         };
         const s = document.createElement("script");
         s.src = "https://busuanzi.ibruce.info/busuanzi?jsonpCallback=" + cbName;
         s.referrerPolicy = "no-referrer-when-downgrade";
-        s.onerror = () => {
-          loading = false;
-          if (!force) setTimeout(() => triggerBsz(true), 3500);
-        };
+        s.onerror = () => { loading = false; };
         document.head.appendChild(s);
       } catch (e) {
         loading = false;
