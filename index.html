@@ -3781,9 +3781,11 @@ const ae = C({}),
     
     if (v1.value && v1.value.pieces) {
       const newAw = { ...AwakenState.value };
-      for (const piece of v1.value.pieces) {
-        if (piece.awakenLevel > 0 && piece.equip?.id) {
-          newAw[piece.equip.id] = piece.awakenLevel;
+      for (let i = 0; i < v1.value.pieces.length; i++) {
+        const piece = v1.value.pieces[i];
+        const eq = typeof awScreenshotEquip === "function" ? awScreenshotEquip(v1.value, i) : piece.equip;
+        if (eq && eq.quality === 5 && piece.awakenLevel != null) {
+          newAw[eq.id] = piece.awakenLevel;
         }
       }
       AwakenState.value = newAw;
@@ -4601,6 +4603,7 @@ const Dr = [
     {
       date: "2026-11-18",
       items: [
+        "红宝觉醒智能识别与校正：彻底修复红宝数量约束误杀导致的觉醒等级漏检问题；新增「逐件觉醒 · 智能识别与校正」交互面板，实时展示原图角标切片与置信度，支持手动快速确认或微调，并完美支持同模歧义红宝觉醒等级导入回填",
         "截图全功能智能识别：全面支持识别游戏截图右上角【先天特性】与【后天机缘】！自动识别 6 大先天标签并提取法宝加成词条（如锤圣转世等），自动识别 4 个后天机缘药丸并精准匹配 193 拆包词库；导入弹窗新增天赋预览与「导入时同步覆盖」控制",
         "红宝觉醒等级导入闭环：打通红宝 0–5 阶觉醒等级从截图识别到已选列表与盘面回填的全链路，并在导入列表直接显示觉醒徽标",
         "同步官方拆包全量后天天赋：完整导入 193 词条配置（涵盖八荒道统 56 条、单兵形态 56 条、双兵阶梯 57 条、流派合道 24 条），直接采用拆包原生词条标准名",
@@ -5317,23 +5320,49 @@ function Xr(t, e, s) {
     d = c + f;
   return v < 0 || d < 0 || v >= o1 || d >= $1 ? null : { row: v, col: d };
 }
-function Vr(t, e) {
-  const s = t.map((l) => l.onlyRed),
-    a = new Set(t.filter((l, i) => s[i]).map((l) => l.cluster)),
-    n = new Map();
-  return (
-    t.forEach((l, i) => {
-      s[i] && n.set(l.cluster, (n.get(l.cluster) ?? 0) + 1);
-    }),
-    t.map((l, i) =>
-      s[i] || !l.hasRed
-        ? !1
-        : (e[l.cluster] ?? 0) >= 3 ||
-          (n.get(l.cluster) ?? 0) >= 2 ||
-          (!a.has(l.cluster) && a.size >= 2),
-    )
-  );
+function screenshotRedLimitFeasible(domains) {
+  if (domains.length > 4) return false;
+  const pending = domains.map(ids => [...new Set(ids)]).sort((a, b) => a.length - b.length);
+  if (pending.some(ids => !ids.length)) return false;
+  const counts = new Map();
+  function assign(index) {
+    if (index === pending.length) return true;
+    for (const id of pending[index]) {
+      const count = counts.get(id) || 0;
+      if (count >= 2 || !count && counts.size >= 2) continue;
+      counts.set(id, count + 1);
+      if (assign(index + 1)) return true;
+      if (count) counts.set(id, count); else counts.delete(id);
+    }
+    return false;
+  }
+  return assign(0);
 }
+
+function redCandidateConstraints(anchors) {
+  const required = anchors.filter(anchor => anchor.onlyRed).map(anchor => anchor.redIds);
+  if (!screenshotRedLimitFeasible(required)) return anchors.map(() => false);
+  return anchors.map(anchor => !anchor.onlyRed && anchor.hasRed
+    && !screenshotRedLimitFeasible([...required, anchor.redIds]));
+}
+
+function screenshotEnforceResolvedRedLimits(result, counts, equipment, layout, suspects) {
+  const reds = Object.entries(counts).filter(([id]) => equipment.get(Number(id))?.quality === 5);
+  if (reds.length <= 2 && reds.every(([, count]) => count <= 2)) return;
+  const ids = new Set(reds.map(([id]) => Number(id)));
+  for (let index = layout.length - 1; index >= 0; index--) {
+    if (!ids.has(layout[index].equipId)) continue;
+    const piece = result.pieces[layout[index].importPieceIndex];
+    if (piece) {
+      suspects.push({row: piece.row, col: piece.col,
+        reason: '红色法宝数量违反游戏规则（最多 2 种、每种 2 个），请重新核对候选'});
+    }
+    layout.splice(index, 1);
+  }
+  for (const [id] of reds) { delete counts[id]; equipment.delete(Number(id)); }
+}
+
+function Vr(t) { return redCandidateConstraints(t); }
 function gs(t, e) {
   const s = [...i1.values()],
     a = [];
@@ -5388,6 +5417,7 @@ function Jr(t, e) {
   const s = gs(t, gs(t, e)),
     a = [...i1.keys()],
     n = [];
+  if (typeof window !== "undefined") window.__DEBUG_JR = { t, s, i1, Le, M1, Or, Ca, z, ut, ct, L0, ms, Wr, Kr, Xr, fs, p0, Y, Fe, Qr, ot, getN: () => n };
   for (let p = 0; p < o1; p++)
     for (let g = 0; g < $1; g++) {
       if (p0(t, s, p, g, Le.badgeBox) <= Y.anchorCandidate) continue;
@@ -5545,12 +5575,11 @@ function Jr(t, e) {
     m[g] = w;
   });
   const A = Vr(
-    n.map((p, g) => ({
+    n.map((p) => ({
       hasRed: p.band.some((w) => w.eq.quality === 5),
       onlyRed: p.band.length > 0 && p.band.every((w) => w.eq.quality === 5),
-      cluster: m[g],
-    })),
-    d.map((p) => p.members.length),
+      redIds: p.band.filter((w) => w.eq.quality === 5).map((w) => w.eq.id),
+    }))
   );
   n.forEach((p, g) => {
     A[g] &&
@@ -5783,13 +5812,8 @@ function Jr(t, e) {
         ({ p: w }) =>
           (w.status === "ok" && w.equip.quality === 5) ||
           (w.status === "ambiguous" && w.candidates[0].quality === 5),
-      ),
-      g = new Map();
-    for (const { i: w } of p) {
-      const q = m[w];
-      g.set(q, (g.get(q) ?? 0) + 1);
-    }
-    if (g.size > 2 || [...g.values()].some((w) => w > 2)) {
+      );
+    if (!screenshotRedLimitFeasible(p.map(({ p: w }) => w.status === "ok" ? [w.equip.id] : (w.candidates || []).filter(q => q.quality === 5).map(q => q.id)))) {
       S = !0;
       for (const { i: w } of p)
         I[w] = {
@@ -5925,7 +5949,7 @@ const F0 = C(0),
   E1 = C(!1);
 let Pe = null,
   h0 = 0;
-const v1 = C(null),
+const v1 = (typeof window !== "undefined" ? (window.v1 = C(null)) : C(null)),
   N1 = C(null),
   d1 = C({}),
   F1 = C(!0),
@@ -6013,7 +6037,7 @@ const v1 = C(null),
       console.warn("Talent recognition error:", err);
       recognizedTalents.value = null;
     }
-    ((V = e), (me.value = "自动定位网格…"), (E1.value = !0));
+    ((V = e), (typeof window !== "undefined" && (window.V = e)), (me.value = "自动定位网格…"), (E1.value = !0));
     const s = ++h0;
     (Pe?.cancel(),
       (Pe = Gr(e.data)),
@@ -6333,6 +6357,154 @@ function il({ row: t, col: e }) {
         },
       });
 }
+function awScreenshotEquip(result, index) {
+  const piece = result.pieces[index];
+  if (piece.status === 'ok' && piece.equip) return piece.equip;
+  for (const group of result.groups || []) {
+    if (group.impossible) continue;
+    for (let cluster = 0; cluster < (group.clusters || []).length; cluster++) {
+      if (!group.clusters[cluster].pieceIndexes.includes(index)) continue;
+      const picked = d1.value[group.key + '#' + cluster];
+      if (picked) return group.candidates.find(eq => eq.id === picked.equipId);
+    }
+  }
+  return piece.candidates?.[0] || piece.equip || null;
+}
+
+function awScreenshotSupported(eq, level) {
+  return awScreenshotLevelValid(level);
+}
+
+function awSetScreenshotLevel(index, level) {
+  const result = v1.value;
+  if (!result || !awScreenshotLevelValid(level) || !result.pieces[index] || !awScreenshotIsRed(result.pieces[index])) return;
+  const eq = awScreenshotEquip(result, index);
+  if (eq && !awScreenshotSupported(eq, level)) return;
+  v1.value = {
+    ...result,
+    pieces: result.pieces.map((piece, i) =>
+      i === index
+        ? { ...piece, awakenLevel: level, awakenConfidence: 1, awakenStatus: 'recognized', awakenManual: true }
+        : piece
+    )
+  };
+}
+
+function awScreenshotBox(box) {
+  const values = Array.isArray(box) ? box : [box?.x, box?.y, box?.width ?? box?.w, box?.height ?? box?.h];
+  return values.length === 4 && values.every(Number.isFinite) && values[2] > 0 && values[3] > 0 ? values : null;
+}
+
+function awScreenshotCrop({ piece }) {
+  const box = awScreenshotBox(piece.awakenBox);
+  if (!V || !box) return null;
+  return r('canvas', {
+    width: 64,
+    height: 64,
+    style: {
+      width: '42px',
+      height: '42px',
+      imageRendering: 'pixelated',
+      border: '1px solid #d8b4fe',
+      borderRadius: '4px',
+      background: '#000',
+      flexShrink: 0
+    },
+    'aria-label': '原图觉醒角标',
+    ref: (canvas) => {
+      if (!canvas || !V) return;
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, 64, 64);
+      context.imageSmoothingEnabled = false;
+      context.drawImage(V.canvas, ...box, 0, 0, 64, 64);
+    }
+  });
+}
+
+function awImportControls({ result }) {
+  const items = result.pieces.map((piece, index) => ({ piece, index })).filter(({ piece }) => awScreenshotIsRed(piece));
+  if (!items.length) return null;
+  return r('div', {
+    class: 'import-awaken-card',
+    style: {
+      padding: '10px 12px',
+      marginBottom: '12px',
+      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+      border: '1px solid #d8b4fe',
+      borderRadius: '8px',
+      fontSize: '0.82rem',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+    },
+    children: [
+      r('div', {
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+        children: [
+          r('span', { style: { fontWeight: 'bold', color: '#6b21a8', fontSize: '0.85rem' }, children: '🔥 红色法宝觉醒 · 智能识别与校正' }),
+          r('span', { class: 'muted small', style: { fontSize: '0.75rem' }, children: '识别有偏差可直接手动切换' })
+        ]
+      }),
+      r('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+        children: items.map(({ piece, index }) => {
+          const eq = awScreenshotEquip(result, index);
+          const valid = eq
+            ? awScreenshotSupported(eq, piece.awakenLevel) && piece.awakenStatus !== 'uncertain'
+            : awScreenshotLevelValid(piece.awakenLevel) && piece.awakenStatus !== 'uncertain';
+          const name = eq?.name ?? (piece.candidates ? piece.candidates.map(c => c.name).join(' / ') : '红色法宝');
+          const maxLevel = 5;
+          return r('div', {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              background: '#fff',
+              padding: '6px 8px',
+              borderRadius: '6px',
+              border: '1px solid #e9d5ff'
+            },
+            children: [
+              r('div', {
+                style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                children: [
+                  r(awScreenshotCrop, { piece }),
+                  r('div', {
+                    children: [
+                      r('div', { style: { fontWeight: '600', color: '#3b0764' }, children: `${name} · 位置 (${piece.row + 1},${piece.col + 1})` }),
+                      r('div', {
+                        class: valid ? 'muted small' : 'warn small',
+                        style: { fontSize: '0.75rem', marginTop: '2px' },
+                        children: valid
+                          ? (piece.awakenManual ? '已手动确认' : piece.awakenLevel === 0 ? '未觉醒 · 已识别' : `已识别为 觉醒 ${piece.awakenLevel} (${Math.round(piece.awakenConfidence * 100)}%)`)
+                          : '觉醒角标未确定，请选择等级'
+                      })
+                    ]
+                  })
+                ]
+              }),
+              r('select', {
+                'aria-label': `第${index + 1}件觉醒等级`,
+                class: valid ? 'elder-select awaken-on inline-select' : 'elder-select inline-select',
+                style: { minWidth: '76px', height: '28px', fontSize: '0.8rem' },
+                value: valid ? String(piece.awakenLevel) : '',
+                onChange: (event) => {
+                  if (event.target.value !== '') awSetScreenshotLevel(index, Number(event.target.value));
+                },
+                children: [
+                  r('option', { value: '', disabled: true, children: '待确认' }),
+                  ...Array.from({ length: maxLevel + 1 }, (_, level) =>
+                    r('option', { value: String(level), children: level ? `觉醒 ${level}` : '未觉醒' }, level)
+                  )
+                ]
+              })
+            ]
+          }, index);
+        })
+      })
+    ]
+  });
+}
+
 function ol() {
   const t = v1.value;
   if (!t) return null;
@@ -6442,6 +6614,7 @@ function ol() {
   return r("div", {
     class: "import-side",
     children: [
+      r(awImportControls, { result: t }),
       recognizedTalents?.value?.hasTalents &&
         r("div", {
           class: "import-talents-card",
