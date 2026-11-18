@@ -3317,6 +3317,8 @@ const ae = C({}),
   De = C(Array(x1).fill(0)),
   AcquiredTalentState = C(Array(x1).fill(0)),
   filterTalentsByEquips = C(true),
+  onlyBaseStatTalents = C(true),
+  talentSearchKeyword = C(""),
   He = C(8e3),
   Xe = C(1),
   P1 = C(1),
@@ -3537,6 +3539,7 @@ const ae = C({}),
     talentPicks: De.value,
     acquiredTalentPicks: AcquiredTalentState.value,
     filterTalentsByEquips: filterTalentsByEquips.value,
+      onlyBaseStatTalents: onlyBaseStatTalents.value,
     awaken: AwakenState.value,
   }),
   xt = new Set(z.equips.map((t) => t.id)),
@@ -3622,6 +3625,7 @@ const ae = C({}),
         (De.value = ar(t.talentPicks)),
         (AcquiredTalentState.value = ar_ac(t.acquiredTalentPicks)),
         (filterTalentsByEquips.value = t.filterTalentsByEquips ?? true),
+      (onlyBaseStatTalents.value = t.onlyBaseStatTalents ?? true),
         (AwakenState.value = tr_aw(t.awaken)));
     }
   },
@@ -7765,32 +7769,84 @@ function kl() {
   }
 
   const doFilter = filterTalentsByEquips.value && activeForms.size > 0;
+  const kw = (talentSearchKeyword.value || "").trim().toLowerCase();
+  const matchKw = (name, desc) => {
+    if (!kw) return true;
+    return (name && name.toLowerCase().includes(kw)) || (desc && desc.toLowerCase().includes(kw));
+  };
 
   return r(R, {
     children: [
       r("div", {
-        style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;",
+        style: "display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;flex-wrap:wrap;gap:0.4rem;",
         children: [
           r("h3", { style: "margin:0;", children: "弟子天赋" }),
-          r("label", {
-            style: "display:inline-flex;align-items:center;gap:0.35rem;font-size:0.82rem;cursor:pointer;color:var(--text-muted,#94a3b8);user-select:none;",
+          r("div", {
+            style: "display:inline-flex;align-items:center;gap:0.75rem;flex-wrap:wrap;",
             children: [
-              r("input", {
-                type: "checkbox",
-                checked: filterTalentsByEquips.value,
-                onChange: (ev) => {
-                  filterTalentsByEquips.value = ev.target.checked;
-                  K();
-                },
+              r("label", {
+                style: "display:inline-flex;align-items:center;gap:0.25rem;font-size:0.8rem;cursor:pointer;color:var(--text-muted,#94a3b8);user-select:none;",
+                title: "根据当前持有法宝的形态与五行属性自动过滤",
+                children: [
+                  r("input", {
+                    type: "checkbox",
+                    checked: filterTalentsByEquips.value,
+                    onChange: (ev) => {
+                      filterTalentsByEquips.value = ev.target.checked;
+                      K();
+                    },
+                  }),
+                  r("span", { children: "快捷筛选" }),
+                ],
               }),
-              r("span", { children: "根据持有法宝快捷筛选" }),
+              r("label", {
+                style: "display:inline-flex;align-items:center;gap:0.25rem;font-size:0.8rem;cursor:pointer;color:var(--text-muted,#94a3b8);user-select:none;",
+                title: "仅展示影响法宝三围面板属性（攻/防/血）的后天机缘，排除不加三围的机制/抗性词条",
+                children: [
+                  r("input", {
+                    type: "checkbox",
+                    checked: onlyBaseStatTalents.value,
+                    onChange: (ev) => {
+                      onlyBaseStatTalents.value = ev.target.checked;
+                      K();
+                    },
+                  }),
+                  r("span", { children: "仅三维加成" }),
+                ],
+              }),
             ],
           }),
         ],
       }),
       r("div", {
-        style: "font-size:0.82rem;font-weight:600;color:var(--text-muted,#94a3b8);margin:0.2rem 0 0.2rem;",
-        children: "【先天特性】（影响三围基础数值，上限4格）",
+        style: "position:relative;margin:0.2rem 0 0.35rem;display:flex;align-items:center;",
+        children: [
+          r("input", {
+            type: "text",
+            class: "text talent-search-input",
+            style: "width:100%;height:30px;min-height:30px;padding:0 1.8rem 0 0.6rem;font-size:0.8rem;border-radius:4px;border:1px solid var(--line);background:var(--bg);box-sizing:border-box;",
+            placeholder: "🔍 搜索天赋词条（如：锤、幡、通神、守一）…",
+            value: talentSearchKeyword.value,
+            onInput: (ev) => {
+              talentSearchKeyword.value = ev.target.value;
+            },
+          }),
+          talentSearchKeyword.value &&
+            r("button", {
+              type: "button",
+              class: "ghost",
+              style: "position:absolute;right:4px;width:22px;height:22px;min-height:22px;padding:0;display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--muted);cursor:pointer;border:none;background:transparent;",
+              onClick: () => {
+                talentSearchKeyword.value = "";
+              },
+              title: "清空搜索",
+              children: "×",
+            }),
+        ],
+      }),
+      r("div", {
+        style: "font-size:0.82rem;font-weight:600;color:var(--text-muted,#94a3b8);margin:0.25rem 0 0.2rem;",
+        children: "【先天特性】",
       }),
       r("div", {
         class: "elder-rows",
@@ -7812,7 +7868,12 @@ function kl() {
                       if (doFilter && !activeForms.has(n) && !l.some((i) => i.id === s)) {
                         return null;
                       }
-                      const available = l.filter((i) => i.id === s || !e.has(i.id));
+                      const available = l.filter((i) => {
+                        if (i.id === s) return true;
+                        if (e.has(i.id)) return false;
+                        if (kw && !matchKw(i.name, i.desc)) return false;
+                        return true;
+                      });
                       if (available.length === 0) return null;
                       return r(
                         "optgroup",
@@ -7844,21 +7905,21 @@ function kl() {
         ),
       }),
       r("div", {
-        style: "font-size:0.82rem;font-weight:600;color:var(--text-muted,#94a3b8);margin:0.6rem 0 0.2rem;",
-        children: "【后天机缘】（官方拆包全量193词条 · 包含百兵/双修/合道/道统，上限4格）",
+        style: "font-size:0.82rem;font-weight:600;color:var(--text-muted,#94a3b8);margin:0.5rem 0 0.2rem;",
+        children: "【后天机缘】",
       }),
       r("div", {
         class: "elder-rows",
         children: acList.map((s, a) => {
-          // 官方六大分类筛选
+          // 官方分类筛选（支持三围过滤与搜索词过滤）
           const filterItem = (i) => {
             if (i.id === s) return true;
+            if (kw && !matchKw(i.name, i.desc)) return false;
+            if (onlyBaseStatTalents.value && !i.base) return false;
             if (!doFilter) return true;
-            // 若为形态词条（单兵、双兵、合道），需匹配持用法宝形态
             if (i.forms && i.forms.length > 0) {
               return i.forms.some((f) => activeForms.has(f));
             }
-            // 若为八荒道统，匹配持用法宝五行属性
             if (i.elem > 0) {
               return activeElements.has(i.elem);
             }
@@ -7965,6 +8026,7 @@ function Al() {
   const clearTalents = () => {
     De.value = Array(x1).fill(0);
     AcquiredTalentState.value = Array(x1).fill(0);
+    talentSearchKeyword.value = "";
     K();
   };
   return r(R, {
