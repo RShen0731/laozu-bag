@@ -6563,9 +6563,8 @@ function ol() {
           }),
           r("ul", {
             class: "import-list cols",
-            children: e.countList.map(({ equip: o, count: c }) => {
-              const awPiece = t.pieces?.find((p) => (p.equip?.id === o.id || p.candidates?.[0]?.id === o.id) && p.awakenLevel > 0);
-              return r(
+            children: e.countList.map(({ equip: o, count: c }) =>
+              r(
                 "li",
                 {
                   children: [
@@ -6573,13 +6572,7 @@ function ol() {
                       class: `el-tag el${o.element}`,
                       children: Fe[o.element],
                     }),
-                    r("span", {
-                      style: { display: "inline-flex", alignItems: "center", gap: "4px" },
-                      children: [
-                        o.name,
-                        awPiece ? r("span", { class: `cell-awaken aw${awPiece.awakenLevel}`, style: { position: "static", display: "inline-block" }, children: `觉${awPiece.awakenLevel}` }) : null
-                      ]
-                    }),
+                    r("span", { children: o.name }),
                     r(pt, { shape: el.get(o.shapeId), tier: o.tier }),
                     r("span", {
                       class: `tier-tag t${o.tier}`,
@@ -6589,8 +6582,8 @@ function ol() {
                   ],
                 },
                 o.id,
-              );
-            }),
+              ),
+            ),
           }),
         ],
       }),
@@ -7462,11 +7455,6 @@ function Il() {
                                     }),
                                     " ",
                                     r(xs, { equip: e, descKey: `sel:${e.id}` }),
-                                    l > 0 &&
-                                      r("b", {
-                                        class: "onboard",
-                                        children: ["上场 ", l],
-                                      }),
                                   ],
                                 }),
                                 r("td", {
