@@ -7936,9 +7936,30 @@ function AwakenHint() {
 
 function Al() {
   const t = ie.value === "weighted";
+  const hasTalents = De.value.some((v) => v > 0) || AcquiredTalentState.value.some((v) => v > 0);
+  const clearTalents = () => {
+    De.value = Array(x1).fill(0);
+    AcquiredTalentState.value = Array(x1).fill(0);
+    K();
+  };
   return r(R, {
     children: [
-      r("h2", { children: "计算设置" }),
+      r("h2", {
+        style: "display:flex;align-items:center;justify-content:space-between;",
+        children: [
+          "计算设置",
+          r("button", {
+            type: "button",
+            class: "ghost right",
+            disabled: !hasTalents,
+            onClick: () => {
+              confirm("清空已配置的弟子天赋（先天特性与后天机缘）？") && clearTalents();
+            },
+            title: "清空所有先天特性与后天机缘",
+            children: "清空",
+          }),
+        ],
+      }),
       r(bl, {}),
       r(kl, {}),
       r("h3", { children: "求解参数" }),
