@@ -128,9 +128,21 @@
   font-size: .86em !important;
 }
 
-/* 移动端法宝列表卡片三行紧凑布局 */
+/* 移动端法宝列表卡片三行紧凑布局（恢复经典统一结构） */
 @media (max-width: 700px) {
-  .tbl.catalog tr {
+  .tbl.catalog thead,
+  .tbl.selected thead {
+    display: none !important;
+  }
+  .tbl.catalog, .tbl.selected,
+  .tbl.catalog tbody, .tbl.selected tbody {
+    display: block !important;
+  }
+
+  /* 非五阶法宝与法宝列表：经典紧凑布局 */
+  .tbl.catalog tr,
+  .tbl.selected tr,
+  .tbl.selected tr.not-red {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto auto !important;
     grid-template-areas:
@@ -140,12 +152,58 @@
       "buff buff buff" !important;
     gap: 0.18rem 0.35rem !important;
     align-items: center !important;
-    padding: 0.24rem 0.35rem !important;
+    padding: 0.25rem 0.35rem !important;
     border-bottom: 1px solid var(--line) !important;
   }
 
-  /* 法宝列表第一行：法宝名称 + 形状 */
-  .tbl.catalog td.name {
+  /* 非五阶法宝：绝对不展示星级和觉醒！ */
+  .tbl.selected tr:not(.is-red) .col-star,
+  .tbl.selected tr:not(.is-red) .col-awaken,
+  .tbl.selected tr.not-red .col-star,
+  .tbl.selected tr.not-red .col-awaken,
+  .tbl.selected .col-star.not-red,
+  .tbl.selected .col-awaken.not-red {
+    display: none !important;
+  }
+
+  /* 五阶法宝（红色法宝）：经典结构融合星级与觉醒，左侧展开品阶+星级+觉醒，右侧数量+移除 */
+  .tbl.selected tr.is-red {
+    display: grid !important;
+    grid-template-columns: auto auto auto 1fr auto !important;
+    grid-template-areas:
+      "name name name name shape"
+      "tier star awaken qty act"
+      "base base base base base"
+      "buff buff buff buff buff" !important;
+    gap: 0.18rem 0.3rem !important;
+    align-items: center !important;
+    padding: 0.25rem 0.35rem !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  .tbl.selected tr.is-red td.col-star {
+    grid-area: star !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .tbl.selected tr.is-red td.col-awaken {
+    grid-area: awaken !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .tbl.selected tr.is-red td.col-star select,
+  .tbl.selected tr.is-red td.col-awaken select {
+    height: 26px !important;
+    min-height: 26px !important;
+    max-height: 26px !important;
+    font-size: 0.74rem !important;
+    padding: 0 4px !important;
+    width: auto !important;
+    min-width: 52px !important;
+  }
+
+  /* 第一行：法宝名称 + 长老名称 + 形状 */
+  .tbl td.name {
     grid-area: name !important;
     display: flex !important;
     align-items: center !important;
@@ -154,42 +212,45 @@
     min-width: 0 !important;
     line-height: 1.25 !important;
   }
-  .tbl.catalog td.name .ename {
+  .tbl td.name .ename {
     font-size: 0.86rem !important;
     font-weight: 600 !important;
   }
-  .tbl.catalog td.col-shape {
+  .tbl td.col-shape {
     grid-area: shape !important;
     justify-self: end !important;
     display: flex !important;
     align-items: center !important;
     gap: 0.2rem !important;
   }
+  .tbl.selected td.col-shape span.small {
+    display: none !important;
+  }
 
-  /* 法宝列表第二行：阶数 + 步进器 + 添加按钮 */
-  .tbl.catalog td.col-tier {
+  /* 第二行：阶数 + 步进器 + 操作按钮 */
+  .tbl td.col-tier {
     grid-area: tier !important;
     justify-self: start !important;
     display: flex !important;
     align-items: center !important;
   }
-  .tbl.catalog td.col-qty {
+  .tbl td.col-qty {
     grid-area: qty !important;
-    justify-self: center !important;
+    justify-self: end !important;
     display: flex !important;
     align-items: center !important;
   }
-  .tbl.catalog td.col-act {
+  .tbl td.col-act {
     grid-area: act !important;
     justify-self: end !important;
     display: flex !important;
     align-items: center !important;
   }
 
-  /* 法宝列表控件高度精简 */
-  .tbl.catalog td.col-tier button,
-  .tbl.catalog td.col-tier select,
-  .tbl.catalog .tier-tag {
+  /* 统一所有第二行操作控件高度为 26px，紧凑精致 */
+  .tbl td.col-tier button,
+  .tbl td.col-tier select,
+  .tbl .tier-tag {
     height: 26px !important;
     min-height: 26px !important;
     max-height: 26px !important;
@@ -197,208 +258,38 @@
     font-size: 0.76rem !important;
     padding: 0 0.45rem !important;
   }
-  .tbl.catalog td.col-qty .stepper {
+  .tbl td.col-qty .stepper {
     height: 26px !important;
     min-height: 26px !important;
     max-height: 26px !important;
   }
-  .tbl.catalog td.col-qty .stepper button {
+  .tbl td.col-qty .stepper button {
     width: 26px !important;
     min-width: 26px !important;
     height: 26px !important;
     min-height: 26px !important;
     line-height: 26px !important;
   }
-  .tbl.catalog td.col-qty .stepper input {
+  .tbl td.col-qty .stepper input {
     height: 26px !important;
     min-height: 26px !important;
     font-size: 0.8rem !important;
     width: 2.2rem !important;
   }
-  .tbl.catalog td.col-act button.add {
+  .tbl td.col-act button {
     height: 26px !important;
     min-height: 26px !important;
     max-height: 26px !important;
     line-height: 26px !important;
-    padding: 0 0.85rem !important;
+    padding: 0 0.65rem !important;
     font-size: 0.78rem !important;
   }
 
-  .tbl.catalog td.col-base {
+  /* 第三行：属性 */
+  .tbl td.col-base {
     grid-area: base !important;
     padding-top: 0.1rem !important;
-  }
-  .tbl.catalog td.col-buff {
-    grid-area: buff !important;
-    padding-top: 0.1rem !important;
-  }
-
-  /* ================= 移动端已选列表：用户指定 4 行卡片布局 ================= */
-  .tbl.selected thead {
-    display: none !important;
-  }
-  .tbl.selected,
-  .tbl.selected tbody {
-    display: block !important;
-  }
-  .tbl.selected tr {
-    display: grid !important;
-    grid-template-columns: repeat(12, 1fr) !important;
-    gap: 0.18rem 0.25rem !important;
-    align-items: center !important;
-    padding: 0.32rem 0.35rem !important;
-    border-bottom: 1px solid var(--line) !important;
-  }
-  .tbl.selected td.col-idx {
-    display: none !important;
-  }
-
-  /* 第一行：【属性 法宝名字 长老名称 阶级 形状】调整展示大小 */
-  .tbl.selected td.name {
-    order: 1 !important;
-    grid-column: 1 / 8 !important;
-    display: flex !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    gap: 0.2rem !important;
-    min-width: 0 !important;
-    line-height: 1.2 !important;
-  }
-  .tbl.selected td.name .el-tag {
-    font-size: 0.68rem !important;
-    padding: 1px 3px !important;
-  }
-  .tbl.selected td.name .ename {
-    font-size: 0.82rem !important;
-    font-weight: 600 !important;
-    white-space: nowrap !important;
-  }
-  .tbl.selected td.name .elder-name {
-    font-size: 0.74rem !important;
-    color: var(--muted) !important;
-    font-weight: normal !important;
-  }
-  .tbl.selected td.col-tier {
-    order: 2 !important;
-    grid-column: 8 / 11 !important;
-    justify-self: end !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-tier button,
-  .tbl.selected td.col-tier select,
-  .tbl.selected td.col-tier .tier-tag {
-    height: 22px !important;
-    min-height: 22px !important;
-    max-height: 22px !important;
-    line-height: 22px !important;
-    font-size: 0.72rem !important;
-    padding: 0 0.35rem !important;
-  }
-  .tbl.selected td.col-shape {
-    order: 3 !important;
-    grid-column: 11 / 13 !important;
-    justify-self: end !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-shape .shape {
-    transform: scale(0.85) !important;
-    transform-origin: right center !important;
-  }
-  .tbl.selected td.col-shape span.small {
-    display: none !important;
-  }
-
-  /* 第二行：【星级 觉醒 数量 移除】 操作列全放第二行 */
-  /* 非红宝法宝隐藏星级和觉醒 */
-  .tbl.selected td.col-star.not-red,
-  .tbl.selected td.col-awaken.not-red {
-    display: none !important;
-  }
-
-  /* 红色法宝星级与觉醒，展示在选择数量的前面 */
-  .tbl.selected td.col-star {
-    order: 4 !important;
-    grid-column: span 3 !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-awaken {
-    order: 5 !important;
-    grid-column: span 3 !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-star select,
-  .tbl.selected td.col-awaken select {
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-    font-size: 0.74rem !important;
-    padding: 1px 2px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-  /* 数量选择 */
-  .tbl.selected tr.is-red td.col-qty {
-    order: 6 !important;
-    grid-column: 7 / 11 !important;
-    justify-self: end !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected tr.not-red td.col-qty {
-    order: 6 !important;
-    grid-column: 1 / 11 !important;
-    justify-self: end !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-qty .stepper {
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-  }
-  .tbl.selected td.col-qty .stepper button {
-    width: 24px !important;
-    min-width: 24px !important;
-    height: 24px !important;
-    min-height: 24px !important;
-    line-height: 24px !important;
-  }
-  .tbl.selected td.col-qty .stepper input {
-    height: 24px !important;
-    min-height: 24px !important;
     font-size: 0.76rem !important;
-    width: 2rem !important;
-  }
-
-  /* 移除按钮 */
-  .tbl.selected td.col-act {
-    order: 7 !important;
-    grid-column: 11 / 13 !important;
-    justify-self: end !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected td.col-act button {
-    height: 24px !important;
-    min-height: 24px !important;
-    max-height: 24px !important;
-    line-height: 24px !important;
-    font-size: 0.74rem !important;
-    padding: 0 0.45rem !important;
-  }
-
-  /* 第三行：属性 */
-  .tbl.selected td.col-base {
-    order: 8 !important;
-    grid-column: 1 / -1 !important;
-    font-size: 0.76rem !important;
-    line-height: 1.3 !important;
-    padding-top: 0.1rem !important;
   }
   .tbl.selected td.col-base .stats {
     flex-direction: row !important;
@@ -406,13 +297,16 @@
     gap: 0.35rem !important;
   }
 
-  /* 第四行：加成 */
-  .tbl.selected td.col-buff {
-    order: 9 !important;
-    grid-column: 1 / -1 !important;
+  /* 第四行：加成说明 */
+  .tbl td.col-buff {
+    grid-area: buff !important;
+    padding-top: 0.1rem !important;
     font-size: 0.74rem !important;
-    line-height: 1.3 !important;
     color: var(--muted) !important;
+  }
+
+  .tbl td.col-idx {
+    display: none !important;
   }
 
   /* ================= 移动端逐件贡献：卡片双行紧凑布局 ================= */

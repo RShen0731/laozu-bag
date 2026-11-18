@@ -3989,13 +3989,15 @@ const ae = C({}),
       const v = (Object.values(i.base)[0] / 100).toFixed(1).replace(/\.0$/, "");
       return `${i.name}（${formNames}${parts.join("")}+${v}%）`;
     }
-    const brief = i.desc
+    let brief = i.desc
       .replace(/【.*?】形态法宝/g, "")
-      .replace(/【|】/g, "")
-      .replace(/形态法宝/g, "")
+      .replace(/【.*?】/g, "")
+      .replace(/.*?形态法宝/g, "")
+      .replace(/效果/g, "")
+      .replace(/强化/g, "")
       .trim();
-    const shortDesc = brief.length > 12 ? brief.slice(0, 11) + "…" : brief;
-    return `${i.name}（${shortDesc}）`;
+    brief = brief.replace(/^，|，$/g, "");
+    return `${i.name}（${brief}）`;
   },
 
   Br = (t) => `${t.name}（${na(t.form)}${Fr[t.attr] ?? ""}+${_1(t.value)}）`,
@@ -7469,7 +7471,7 @@ function Il() {
                           return r(
                             "tr",
                             {
-                              class: e.quality === 5 ? "is-red" : "not-red",
+                              class: (e.tier === 5 && e.quality === 5) ? "is-red" : "not-red",
                               children: [
                                 r("td", {
                                   class: "muted col-idx",
@@ -7505,7 +7507,7 @@ function Il() {
                                       talents: ma.value,
                                     }),
                                   }),
-                                (e.quality === 5 && e.elder)
+                                (e.tier === 5 && e.quality === 5 && e.elder)
                                   ? r("td", {
                                       class: "col-star nowrap",
                                       children: r("select", {
@@ -7522,7 +7524,7 @@ function Il() {
                                       }),
                                     })
                                   : r("td", { class: "muted col-star not-red", children: "-" }),
-                                AWAKEN_DB[e.id]
+                                (e.tier === 5 && AWAKEN_DB[e.id])
                                   ? r("td", {
                                       class: "col-awaken nowrap",
                                       children: r("select", {
@@ -7914,7 +7916,9 @@ function kl() {
           // 官方分类筛选（支持三围过滤与搜索词过滤）
           const filterItem = (i) => {
             if (i.id === s) return true;
-            if (kw && !matchKw(i.name, i.desc)) return false;
+            if (kw) {
+              return matchKw(i.name, i.desc);
+            }
             if (onlyBaseStatTalents.value && !i.base) return false;
             if (!doFilter) return true;
             if (i.forms && i.forms.length > 0) {
