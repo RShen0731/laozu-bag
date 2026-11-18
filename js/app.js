@@ -3926,17 +3926,17 @@ const ae = C({}),
       D1.value === t && (D1.value = ""));
   },
   br = {
-    2001: "攻击力",
+    2001: "攻击",
     2002: "防御",
-    2003: "生命值",
+    2003: "生命",
     2004: "攻击%",
     2005: "防御%",
     2006: "生命%",
     2025: "增伤",
-    2027: "暴伤",
+    2027: "爆伤",
     2045: "治疗",
     2047: "汲取",
-    2049: "强汲取",
+    2049: "汲取",
     2069: "护盾",
   },
   yr = new Map(z.attrs.map((t) => [t.id, t.name])),
@@ -3993,8 +3993,18 @@ const ae = C({}),
       .replace(/【.*?】形态法宝/g, "")
       .replace(/【.*?】/g, "")
       .replace(/.*?形态法宝/g, "")
+      .replace(/怒气回复(效率|率)/g, "回怒")
+      .replace(/怒气技增伤/g, "怒气增伤")
+      .replace(/怒气技减伤/g, "怒气减伤")
+      .replace(/暴击(伤害|增伤)/g, "爆伤")
+      .replace(/汲取率/g, "汲取")
+      .replace(/治疗效果/g, "治疗")
+      .replace(/护盾效果/g, "护盾")
+      .replace(/破盾强化/g, "破盾")
+      .replace(/穿甲抵抗/g, "抗穿甲")
       .replace(/效果/g, "")
       .replace(/强化/g, "")
+      .replace(/各\+/g, "+")
       .trim();
     brief = brief.replace(/^，|，$/g, "");
     return `${i.name}（${brief}）`;
@@ -7772,9 +7782,13 @@ function kl() {
 
   const doFilter = filterTalentsByEquips.value && activeForms.size > 0;
   const kw = (talentSearchKeyword.value || "").trim().toLowerCase();
-  const matchKw = (name, desc) => {
+  const matchKw = (name, desc, optionText) => {
     if (!kw) return true;
-    return (name && name.toLowerCase().includes(kw)) || (desc && desc.toLowerCase().includes(kw));
+    return (
+      (name && name.toLowerCase().includes(kw)) ||
+      (desc && desc.toLowerCase().includes(kw)) ||
+      (optionText && optionText.toLowerCase().includes(kw))
+    );
   };
 
   return r(R, {
@@ -7873,7 +7887,7 @@ function kl() {
                       const available = l.filter((i) => {
                         if (i.id === s) return true;
                         if (e.has(i.id)) return false;
-                        if (kw && !matchKw(i.name, i.desc)) return false;
+                        if (kw && !matchKw(i.name, i.desc, Br(i))) return false;
                         return true;
                       });
                       if (available.length === 0) return null;
@@ -7917,7 +7931,7 @@ function kl() {
           const filterItem = (i) => {
             if (i.id === s) return true;
             if (kw) {
-              return matchKw(i.name, i.desc);
+              return matchKw(i.name, i.desc, Dr_ac(i));
             }
             if (onlyBaseStatTalents.value && !i.base) return false;
             if (!doFilter) return true;
