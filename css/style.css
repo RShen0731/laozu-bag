@@ -18,6 +18,30 @@
   font-size: 0.85rem !important;
   margin-right: 0.25rem !important;
 }
+/* 天赋行（先天特性与后天机缘）：名称固定统一宽度，下拉选择框 100% 绝对同宽 */
+.elder-row.talent-row .name,
+.elder-row .name.talent-name {
+  flex: 0 0 5.2rem !important;
+  width: 5.2rem !important;
+  min-width: 5.2rem !important;
+  max-width: 5.2rem !important;
+  font-size: 0.84rem !important;
+  color: var(--fg) !important;
+  margin-right: 0.35rem !important;
+}
+.elder-row.talent-row select.elder-select,
+.elder-row select.elder-select {
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 28px !important;
+  font-size: 0.78rem !important;
+  box-sizing: border-box !important;
+  text-overflow: ellipsis !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
 .elder-row select.star-select {
   margin-left: auto !important;
   width: 86px !important;
@@ -309,7 +333,7 @@
     display: none !important;
   }
 
-  /* ================= 移动端逐件贡献：卡片双行紧凑布局 ================= */
+  /* ================= 移动端逐件贡献：卡片双行紧凑布局，彻底杜绝碎线 ================= */
   .tbl.detail thead {
     display: none !important;
   }
@@ -317,32 +341,61 @@
   .tbl.detail tbody {
     display: block !important;
   }
+  .tbl.detail td {
+    border: none !important;
+    padding: 0 !important;
+    line-height: 1.35 !important;
+  }
   .tbl.detail tbody tr {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.18rem 0.25rem !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    row-gap: 0.28rem !important;
+    column-gap: 0.45rem !important;
     align-items: center !important;
-    padding: 0.35rem 0.45rem !important;
+    padding: 0.48rem 0.55rem !important;
     border-bottom: 1px solid var(--line) !important;
+    cursor: pointer !important;
+  }
+  .tbl.detail tbody tr:last-child {
+    border-bottom: none !important;
+  }
+  .tbl.detail td.col-idx {
+    grid-column: 1 / 2 !important;
+    grid-row: 1 / 2 !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: var(--accent) !important;
+    background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent) !important;
+    padding: 0.05rem 0.32rem !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important;
+    align-self: center !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1.2 !important;
   }
   .tbl.detail td.col-name {
-    grid-column: 1 / 3 !important;
+    grid-column: 2 / 3 !important;
+    grid-row: 1 / 2 !important;
     font-weight: 600 !important;
-    font-size: 0.82rem !important;
+    font-size: 0.85rem !important;
     display: flex !important;
     align-items: center !important;
-    gap: 0.2rem !important;
+    gap: 0.25rem !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    color: var(--fg) !important;
   }
   .tbl.detail td.col-score {
-    grid-column: 3 / 5 !important;
+    grid-column: 3 / 4 !important;
+    grid-row: 1 / 2 !important;
     justify-self: end !important;
     font-weight: 700 !important;
-    font-size: 0.86rem !important;
+    font-size: 0.92rem !important;
     color: var(--accent) !important;
     white-space: nowrap !important;
+    font-variant-numeric: tabular-nums !important;
   }
   .tbl.detail td.col-score::before {
     content: "得分 ";
@@ -352,15 +405,16 @@
   }
   .tbl.detail td.col-atk,
   .tbl.detail td.col-def,
-  .tbl.detail td.col-hp,
-  .tbl.detail td.col-pos {
-    font-size: 0.74rem !important;
+  .tbl.detail td.col-hp {
+    font-size: 0.75rem !important;
     color: var(--muted) !important;
     white-space: nowrap !important;
-    line-height: 1.2 !important;
+    font-variant-numeric: tabular-nums !important;
   }
   .tbl.detail td.col-atk {
     grid-column: 1 / 2 !important;
+    grid-row: 2 / 3 !important;
+    justify-self: start !important;
   }
   .tbl.detail td.col-atk::before {
     content: "攻 ";
@@ -368,6 +422,8 @@
   }
   .tbl.detail td.col-def {
     grid-column: 2 / 3 !important;
+    grid-row: 2 / 3 !important;
+    justify-self: start !important;
   }
   .tbl.detail td.col-def::before {
     content: "防 ";
@@ -375,19 +431,23 @@
   }
   .tbl.detail td.col-hp {
     grid-column: 3 / 4 !important;
+    grid-row: 2 / 3 !important;
+    justify-self: end !important;
   }
   .tbl.detail td.col-hp::before {
     content: "血 ";
     color: var(--text-muted, #94a3b8);
   }
-  .tbl.detail td.col-pos {
-    grid-column: 4 / 5 !important;
-    justify-self: end !important;
-  }
-  .tbl.detail td.col-pos::before {
-    content: "格位 ";
-    color: var(--text-muted, #94a3b8);
-  }
+}
+
+/* PC 端逐件贡献表格序号列 */
+.tbl.detail th.col-idx,
+.tbl.detail td.col-idx {
+  width: 3.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.82rem;
 }
 
 /* 长老名称标识 */

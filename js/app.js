@@ -7856,10 +7856,10 @@ function kl() {
           r(
             "label",
             {
-              class: "elder-row",
+              class: "elder-row talent-row",
               key: "innate-" + a,
               children: [
-                r("span", { class: "name", children: ["先天特性 ", a + 1] }),
+                r("span", { class: "name talent-name", children: ["先天特性 ", a + 1] }),
                 r("select", {
                   class: s > 0 ? "elder-select on" : "elder-select",
                   value: String(s),
@@ -7940,10 +7940,10 @@ function kl() {
           return r(
             "label",
             {
-              class: "elder-row",
+              class: "elder-row talent-row",
               key: "acquired-" + a,
               children: [
-                r("span", { class: "name", children: ["后天机缘 ", a + 1] }),
+                r("span", { class: "name talent-name", children: ["后天机缘 ", a + 1] }),
                 r("select", {
                   class: s > 0 ? "elder-select on" : "elder-select",
                   value: String(s),
@@ -8355,12 +8355,12 @@ function Sl({ result: t, explain: e, stale: s, selected: a, onSelect: n }) {
           r("thead", {
             children: r("tr", {
               children: [
-                r("th", { children: "法宝" }),
-                r("th", { children: "位置" }),
-                r("th", { children: "攻击力" }),
-                r("th", { children: "防御" }),
-                r("th", { children: "生命值" }),
-                r("th", { children: "该件得分" }),
+                r("th", { class: "col-idx", children: "序号" }),
+                r("th", { class: "col-name", children: "法宝" }),
+                r("th", { class: "col-atk", children: "攻击力" }),
+                r("th", { class: "col-def", children: "防御" }),
+                r("th", { class: "col-hp", children: "生命值" }),
+                r("th", { class: "col-score", children: "该件得分" }),
               ],
             }),
           }),
@@ -8373,6 +8373,10 @@ function Sl({ result: t, explain: e, stale: s, selected: a, onSelect: n }) {
                   onClick: () => n(l === o ? null : o),
                   children: [
                     r("td", {
+                      class: "num col-idx",
+                      children: `#${o + 1}`,
+                    }),
+                    r("td", {
                       class: "col-name",
                       children: [
                         r("span", { class: `dot el${i.piece.element}` }),
@@ -8382,10 +8386,6 @@ function Sl({ result: t, explain: e, stale: s, selected: a, onSelect: n }) {
                         i.piece.tier,
                         "阶",
                       ],
-                    }),
-                    r("td", {
-                      class: "num col-pos",
-                      children: [i.piece.row + 1, ",", i.piece.col + 1],
                     }),
                     r("td", { class: "num col-atk", children: I1(i.finalAtk) }),
                     r("td", { class: "num col-def", children: I1(i.finalDef) }),
