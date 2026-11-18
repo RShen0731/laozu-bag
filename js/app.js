@@ -3970,6 +3970,30 @@ const ae = C({}),
     return !!s && Object.values(s).some((a) => a > 0);
   },
   Fr = { 2004: "攻", 2005: "防", 2006: "命" },
+  Dr_ac = (i) => {
+    if (!i) return "";
+    if (i.base) {
+      const formNames = (i.forms || []).map((f) => na(f)).join("");
+      if (i.base[2004] && i.base[2005] && i.base[2006]) {
+        const v = (i.base[2004] / 100).toFixed(1).replace(/\.0$/, "");
+        return `${i.name}（${formNames}三围+${v}%）`;
+      }
+      const parts = [];
+      if (i.base[2004]) parts.push("攻");
+      if (i.base[2005]) parts.push("防");
+      if (i.base[2006]) parts.push("血");
+      const v = (Object.values(i.base)[0] / 100).toFixed(1).replace(/\.0$/, "");
+      return `${i.name}（${formNames}${parts.join("")}+${v}%）`;
+    }
+    const brief = i.desc
+      .replace(/【.*?】形态法宝/g, "")
+      .replace(/【|】/g, "")
+      .replace(/形态法宝/g, "")
+      .trim();
+    const shortDesc = brief.length > 12 ? brief.slice(0, 11) + "…" : brief;
+    return `${i.name}（${shortDesc}）`;
+  },
+
   Br = (t) => `${t.name}（${na(t.form)}${Fr[t.attr] ?? ""}+${_1(t.value)}）`,
   xr = (t) => "★".repeat(t) + "☆".repeat(Math.max(0, k0 - t)),
   Cr = (t, e) => {
@@ -7441,6 +7465,7 @@ function Il() {
                           return r(
                             "tr",
                             {
+                              class: e.quality === 5 ? "is-red" : "not-red",
                               children: [
                                 r("td", {
                                   class: "muted col-idx",
@@ -7492,7 +7517,7 @@ function Il() {
                                         ],
                                       }),
                                     })
-                                  : r("td", { class: "muted col-star", children: "-" }),
+                                  : r("td", { class: "muted col-star not-red", children: "-" }),
                                 AWAKEN_DB[e.id]
                                   ? r("td", {
                                       class: "col-awaken nowrap",
@@ -7512,7 +7537,7 @@ function Il() {
                                         ],
                                       }),
                                     })
-                                  : r("td", { class: "muted col-awaken", children: "-" }),
+                                  : r("td", { class: "muted col-awaken not-red", children: "-" }),
                                 Y0.value &&
                                   r("td", {
                                     class: "col-buff",
@@ -7882,7 +7907,7 @@ function kl() {
                                 key: i.id,
                                 value: String(i.id),
                                 title: i.desc,
-                                children: `${i.name}（${i.desc}）`,
+                                children: Dr_ac(i),
                               },
                               i.id,
                             ),
@@ -8282,6 +8307,7 @@ function Sl({ result: t, explain: e, stale: s, selected: a, onSelect: n }) {
                   onClick: () => n(l === o ? null : o),
                   children: [
                     r("td", {
+                      class: "col-name",
                       children: [
                         r("span", { class: `dot el${i.piece.element}` }),
                         " ",
@@ -8292,14 +8318,14 @@ function Sl({ result: t, explain: e, stale: s, selected: a, onSelect: n }) {
                       ],
                     }),
                     r("td", {
-                      class: "num",
+                      class: "num col-pos",
                       children: [i.piece.row + 1, ",", i.piece.col + 1],
                     }),
-                    r("td", { class: "num", children: I1(i.finalAtk) }),
-                    r("td", { class: "num", children: I1(i.finalDef) }),
-                    r("td", { class: "num", children: I1(i.finalHp) }),
+                    r("td", { class: "num col-atk", children: I1(i.finalAtk) }),
+                    r("td", { class: "num col-def", children: I1(i.finalDef) }),
+                    r("td", { class: "num col-hp", children: I1(i.finalHp) }),
                     r("td", {
-                      class: "num",
+                      class: "num col-score",
                       children: I1(
                         ie.value === "power" ? i.powerScore : i.weightedScore,
                       ),
