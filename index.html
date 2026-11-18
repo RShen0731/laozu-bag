@@ -3306,6 +3306,8 @@ const ia = (t, e, s, a) => {
 q0();
 const ae = C({}),
   AwakenState = C({}),
+  recognizedTalents = C(null),
+  syncTalentsOnImport = C(!0),
   ke = C(le),
   he = C(J),
   qe = C([]),
@@ -3785,6 +3787,15 @@ const ae = C({}),
         }
       }
       AwakenState.value = newAw;
+    }
+    if (v1.value && syncTalentsOnImport?.value && recognizedTalents?.value?.hasTalents) {
+      const { innatePicks, acquiredPicks } = recognizedTalents.value;
+      if (innatePicks && innatePicks.some(id => id > 0)) {
+        De.value = [...innatePicks];
+      }
+      if (acquiredPicks && acquiredPicks.some(id => id > 0)) {
+        AcquiredTalentState.value = [...acquiredPicks];
+      }
     }
     ((ae.value = s), e && (Ae.value = e), K());
 
@@ -4590,6 +4601,8 @@ const Dr = [
     {
       date: "2026-11-18",
       items: [
+        "截图全功能智能识别：全面支持识别游戏截图右上角【先天特性】与【后天机缘】！自动识别 6 大先天标签并提取法宝加成词条（如锤圣转世等），自动识别 4 个后天机缘药丸并精准匹配 193 拆包词库；导入弹窗新增天赋预览与「导入时同步覆盖」控制",
+        "红宝觉醒等级导入闭环：打通红宝 0–5 阶觉醒等级从截图识别到已选列表与盘面回填的全链路，并在导入列表直接显示觉醒徽标",
         "同步官方拆包全量后天天赋：完整导入 193 词条配置（涵盖八荒道统 56 条、单兵形态 56 条、双兵阶梯 57 条、流派合道 24 条），直接采用拆包原生词条标准名",
         "精准三围数值加成：严格按照官方拆包底层规则，对 100 种影响法宝攻击、防御、生命三维面板的后天词条进行全链路高精度计算",
         "智能形态与属性过滤：快捷筛选复选框根据持有法宝形态（刀/剑/锤/御/枪/乐/异/幡）与五行属性（金/木/水/火/土/雷/邪/体）双重智能过滤，配置极速便捷",
@@ -5928,6 +5941,7 @@ const v1 = C(null),
       (N1.value = null),
       (me.value = null),
       (F1.value = !0),
+      (recognizedTalents && (recognizedTalents.value = null)),
       F0.value++);
   },
   tl = () => {
@@ -5962,6 +5976,9 @@ const v1 = C(null),
     setTimeout(() => {
       if (!V) return;
       const e = Jr(V.bitmap, t);
+      if (typeof awAttachScreenshot === "function") {
+        try { awAttachScreenshot(V.bitmap, e); } catch(err) { console.warn("awAttachScreenshot error:", err); }
+      }
       re.value = e.grid;
       const s = {};
       (e.groups.forEach((a) => {
@@ -5987,6 +6004,14 @@ const v1 = C(null),
       ((me.value = null),
         (N1.value = "无法读取该图片，请换一张 PNG / JPG 截图"));
       return;
+    }
+    try {
+      if (typeof recognizeTalentsFromImageData === "function") {
+        recognizedTalents.value = recognizeTalentsFromImageData(e.data.data, e.data.width, e.data.height, z.talents, ACQUIRED_TALENTS);
+      }
+    } catch (err) {
+      console.warn("Talent recognition error:", err);
+      recognizedTalents.value = null;
     }
     ((V = e), (me.value = "自动定位网格…"), (E1.value = !0));
     const s = ++h0;
@@ -6417,6 +6442,64 @@ function ol() {
   return r("div", {
     class: "import-side",
     children: [
+      recognizedTalents?.value?.hasTalents &&
+        r("div", {
+          class: "import-talents-card",
+          style: {
+            padding: "10px 12px",
+            marginBottom: "12px",
+            background: "linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)",
+            border: "1px solid #a7f3d0",
+            borderRadius: "8px",
+            fontSize: "0.82rem",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+          },
+          children: [
+            r("div", {
+              style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" },
+              children: [
+                r("span", { style: { fontWeight: "bold", color: "#065f46", fontSize: "0.85rem" }, children: "✨ 自动识别到弟子天赋" }),
+                r("label", {
+                  style: { cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.8rem", color: "#047857" },
+                  children: [
+                    r("input", {
+                      type: "checkbox",
+                      checked: syncTalentsOnImport.value,
+                      onChange: (o) => (syncTalentsOnImport.value = o.target.checked)
+                    }),
+                    "导入时同步覆盖"
+                  ]
+                })
+              ]
+            }),
+            recognizedTalents.value.innateNames?.length > 0 &&
+              r("div", {
+                style: { margin: "4px 0", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" },
+                children: [
+                  r("span", { style: { color: "#92400e", fontWeight: "600", minWidth: "62px" }, children: "先天特性：" }),
+                  ...recognizedTalents.value.innateNames.map((name) =>
+                    r("span", {
+                      style: { display: "inline-block", background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a", padding: "1px 6px", borderRadius: "4px", fontSize: "0.78rem" },
+                      children: name
+                    })
+                  )
+                ]
+              }),
+            recognizedTalents.value.acquiredNames?.length > 0 &&
+              r("div", {
+                style: { margin: "4px 0", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" },
+                children: [
+                  r("span", { style: { color: "#1e40af", fontWeight: "600", minWidth: "62px" }, children: "后天机缘：" }),
+                  ...recognizedTalents.value.acquiredNames.map((name) =>
+                    r("span", {
+                      style: { display: "inline-block", background: "#dbeafe", color: "#1e40af", border: "1px solid #bfdbfe", padding: "1px 6px", borderRadius: "4px", fontSize: "0.78rem" },
+                      children: name
+                    })
+                  )
+                ]
+              })
+          ]
+        }),
       t.redViolation &&
         r("p", {
           class: "warn small",
@@ -6446,8 +6529,9 @@ function ol() {
           }),
           r("ul", {
             class: "import-list cols",
-            children: e.countList.map(({ equip: o, count: c }) =>
-              r(
+            children: e.countList.map(({ equip: o, count: c }) => {
+              const awPiece = t.pieces?.find((p) => (p.equip?.id === o.id || p.candidates?.[0]?.id === o.id) && p.awakenLevel > 0);
+              return r(
                 "li",
                 {
                   children: [
@@ -6456,6 +6540,7 @@ function ol() {
                       children: Fe[o.element],
                     }),
                     r("span", { children: o.name }),
+                    awPiece ? r("span", { class: `cell-awaken aw${awPiece.awakenLevel}`, style: { position: "static", display: "inline-block", marginLeft: "4px", verticalAlign: "middle" }, children: `觉${awPiece.awakenLevel}` }) : null,
                     r(pt, { shape: el.get(o.shapeId), tier: o.tier }),
                     r("span", {
                       class: `tier-tag t${o.tier}`,
@@ -6465,8 +6550,8 @@ function ol() {
                   ],
                 },
                 o.id,
-              ),
-            ),
+              );
+            }),
           }),
         ],
       }),
@@ -6616,6 +6701,11 @@ function dl() {
                               0,
                             ),
                           }),
+                          recognizedTalents?.value?.hasTalents &&
+                            r("span", {
+                              style: { color: "#059669", fontWeight: "600", marginLeft: "6px" },
+                              children: [" · 包含弟子天赋 ", r("b", { children: recognizedTalents.value.innateNames.length + recognizedTalents.value.acquiredNames.length }), " 条"]
+                            }),
                           e.unresolved > 0 &&
                             r(R, {
                               children: [
@@ -9473,6 +9563,669 @@ function awAttachScreenshot(bitmap, result) {
   }
   return result;
 }
+
+// ==================== 弟子先天特性与后天机缘 OCR 引擎 ====================
+
+/* Tiny, deterministic talent-card segmentation. No OCR engine or DOM required.
+ * The context bitmap is the shared 共鸣神通 UI title cropped at [526,725,649,752]
+ * from talent-ocr-research/xindong/1369428024.jpg. It is not a blind-test image.
+ * Name identities are deliberately left to the separate game-font matcher.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.LaozuTalentLiteSegmentation = api;
+})(typeof self !== 'undefined' ? self : globalThis, function () {
+  'use strict';
+  const WIDTH = 864;
+  const ANCHOR_BITS = 'DwAAAAAAAwAAAAAAAAAAGAAwAAAAGAAAAAYAAAAAL4CBAwAAwAAAADAAAPD/+AEcHAAAAH8AOIADAADDxw9A4AAAAP8HwAAcABwADnwAAwcAABgwAAD+H+AAOQADODgAAICAAQD4/wAA+AAA+P8fAAAGBADAOAYAgAcAwB9fAPwxMwA/xjAAAPwHADAwAOCPiQH+MYYBP+4xAACBAQBjDAwAjjEM+BCGAQAIDAAIYyAAMPw/AIZwDABAYABAGAMAgOD/ARD8PwAAAwMAQhgIAAZjDMBgjAEAGBgAEML/A7gYQwADYQgAwP//gBD+H+DJGAI4iGcA/P//B4QA4IAPxhiAw/8D4GEAECAEAANm8P8AMMMYAAAAAAA/ABgwgv8HgBjGAAAIAAD4+c8AGIgBAMYwBgBgQABAwAcGwAAMADiAAACAAw4AAAAwAAZgAOATAAAAD+AAAADAABAAAwD7AwAAPAAOAAAABoAAGAAA+APgYAAgAAAAMAAEwAAAAPyPBwIAAAAAgAAAAAAAAAB+PgAAAAAAAAAAAAAAAAAA8AA=';
+
+  function validate(input) {
+    if (!input || !Number.isInteger(input.width) || !Number.isInteger(input.height) || input.width < 1 || input.height < 1 || input.width > 8192 || input.height > 8192 || input.width * input.height > 20000000) throw new TypeError('Invalid RGBA image dimensions');
+    if (!ArrayBuffer.isView(input.data) || input.data.BYTES_PER_ELEMENT !== 1 || input.data.length !== input.width * input.height * 4) throw new TypeError('Expected one RGBA byte array');
+    return input;
+  }
+
+  function resize(input, width, height) {
+    const source = input.data, sw = input.width, sh = input.height;
+    const output = new Uint8ClampedArray(width * height * 4);
+    // Upscaling interpolated RGB would erode the tiny white cores before the
+    // contrast mask. Preserve source pixels; later template resampling smooths
+    // the binary strokes without inventing brighter text pixels.
+    if (width > sw) {
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const sy = Math.min(sh - 1, Math.floor((y + .5) * sh / height)), sx = Math.min(sw - 1, Math.floor((x + .5) * sw / width));
+        for (let c = 0; c < 4; c++) output[(y * width + x) * 4 + c] = source[(sy * sw + sx) * 4 + c];
+      }
+      return { data: output, width, height };
+    }
+    for (let y = 0; y < height; y++) {
+      const fy = Math.max(0, Math.min(sh - 1, (y + .5) * sh / height - .5));
+      const y0 = Math.floor(fy), y1 = Math.min(sh - 1, y0 + 1), dy = fy - y0;
+      for (let x = 0; x < width; x++) {
+        const fx = Math.max(0, Math.min(sw - 1, (x + .5) * sw / width - .5));
+        const x0 = Math.floor(fx), x1 = Math.min(sw - 1, x0 + 1), dx = fx - x0;
+        const p00 = (y0 * sw + x0) * 4, p01 = (y0 * sw + x1) * 4, p10 = (y1 * sw + x0) * 4, p11 = (y1 * sw + x1) * 4;
+        const target = (y * width + x) * 4;
+        for (let c = 0; c < 4; c++) output[target + c] = (source[p00 + c] * (1 - dx) + source[p01 + c] * dx) * (1 - dy) + (source[p10 + c] * (1 - dx) + source[p11 + c] * dx) * dy;
+      }
+    }
+    return { data: output, width, height };
+  }
+
+  function makeMasks(input) {
+    const { data, width, height } = input, count = width * height;
+    const gray = new Uint8Array(count), hmin = new Uint8Array(count), white = new Uint8Array(count), muted = new Uint8Array(count);
+    const qualities = [new Uint8Array(count), new Uint8Array(count), new Uint8Array(count), new Uint8Array(count), new Uint8Array(count)];
+    for (let p = 0; p < count; p++) {
+      const i = p * 4, alpha = data[i + 3] / 255;
+      const r = data[i] * alpha + 255 * (1 - alpha), g = data[i + 1] * alpha + 255 * (1 - alpha), b = data[i + 2] * alpha + 255 * (1 - alpha);
+      gray[p] = (r + g + b) / 3;
+      qualities[0][p] = r >= 40 && r <= 130 && Math.max(r, g, b) - Math.min(r, g, b) <= 25;
+      // Quality 1 is green. Its hue is a candidate filter only: the available
+      // natural fixtures do not include a green talent for identity validation.
+      qualities[1][p] = g - r >= 10 && g - b >= 10 && g >= 80 && g <= 225 && r >= 30 && b >= 30;
+      qualities[2][p] = b - r >= 10 && g - r >= 15 && g >= 85 && b <= 220 && r >= 40;
+      qualities[3][p] = r - g >= 15 && b - g >= 15 && Math.abs(r - b) <= 70 && r >= 115 && r <= 230 && g >= 65;
+      qualities[4][p] = r - g >= 12 && r - g <= 60 && g - b >= 12 && g - b <= 70 && r >= 120 && r <= 235 && g >= 85;
+      white[p] = r >= 205 && g >= 205 && b >= 185 && Math.max(r, g, b) - Math.min(r, g, b) <= 65;
+      muted[p] = r >= 105 && g >= 100 && b >= 95 && Math.max(r, g, b) <= 205 && Math.max(r, g, b) - Math.min(r, g, b) <= 45;
+    }
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      let value = 255;
+      for (let xx = Math.max(0, x - 3); xx <= Math.min(width - 1, x + 3); xx++) value = Math.min(value, gray[y * width + xx]);
+      hmin[y * width + x] = value;
+    }
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const p = y * width + x;
+      if (!white[p] && !muted[p]) continue;
+      let value = 255;
+      for (let yy = Math.max(0, y - 3); yy <= Math.min(height - 1, y + 3); yy++) value = Math.min(value, hmin[yy * width + x]);
+      white[p] = white[p] && gray[p] - value >= 35;
+      muted[p] = muted[p] && gray[p] - value >= 25;
+    }
+    return { white, muted, qualities };
+  }
+
+  function runs(values, threshold, gap) {
+    const output = []; let start = -1, last = -1;
+    for (let index = 0; index < values.length; index++) if (values[index] >= threshold) {
+      if (start < 0) start = index;
+      else if (index - last > gap + 1) { output.push([start, last + 1]); start = index; }
+      last = index;
+    }
+    if (start >= 0) output.push([start, last + 1]);
+    return output;
+  }
+
+  function boxSum(mask, width, box) {
+    let sum = 0;
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) sum += mask[y * width + x];
+    return sum;
+  }
+
+  function tightBox(mask, width, box) {
+    let x0 = box[2], y0 = box[3], x1 = box[0], y1 = box[1];
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (mask[y * width + x]) {
+      x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + 1); y1 = Math.max(y1, y + 1);
+    }
+    return x1 > x0 && y1 > y0 ? [x0, y0, x1, y1] : null;
+  }
+
+  function badgeExtent(mask, width, height, box) {
+    const [x0, y0, x1, y1] = box, th = y1 - y0;
+    const sx0 = Math.max(0, x0 - Math.round(th * 2.5)), sx1 = Math.min(width, x1 + Math.round(th * 2.5));
+    const sy0 = Math.max(0, y0 - Math.round(th * .6)), sy1 = Math.min(height, y1 + Math.round(th * .6));
+    const columns = new Uint16Array(sx1 - sx0);
+    for (let y = sy0; y < sy1; y++) for (let x = sx0; x < sx1; x++) columns[x - sx0] += mask[y * width + x];
+    const cx = (x0 + x1) / 2 - sx0;
+    const span = runs(columns, Math.max(2, Math.round((sy1 - sy0) * .12)), 3).find(([a, b]) => a <= cx && cx < b);
+    if (!span) return null;
+    const [a, b] = span, rows = new Uint16Array(sy1 - sy0);
+    for (let y = sy0; y < sy1; y++) for (let x = sx0 + a; x < sx0 + b; x++) rows[y - sy0] += mask[y * width + x];
+    const cy = (y0 + y1) / 2 - sy0;
+    const yspan = runs(rows, Math.max(2, Math.round((b - a) * .25)), 3).find(([c, d]) => c <= cy && cy < d);
+    return yspan ? [sx0 + a, sy0 + yspan[0], sx0 + b, sy0 + yspan[1]] : null;
+  }
+
+  function wordCandidates(image, masks, mutedMode) {
+    const { width, height } = image, { qualities } = masks, white = mutedMode ? masks.muted : masks.white;
+    const left = Math.round(width * .49), right = Math.round(width * .98), top = Math.round(height * .15), bottom = Math.round(height * .60);
+    const rows = new Uint16Array(bottom - top), output = [];
+    for (let y = top; y < bottom; y++) for (let x = left; x < right; x++) rows[y - top] += white[y * width + x];
+    for (const [a, b] of runs(rows, 6, 2)) {
+      if (b - a < 8 || b - a > 44) continue;
+      const columns = new Uint16Array(right - left);
+      for (let y = top + a; y < top + b; y++) for (let x = left; x < right; x++) columns[x - left] += white[y * width + x];
+      for (const [c, d] of runs(columns, 1, Math.max(2, Math.round((b - a) * .45)))) {
+        const box = tightBox(white, width, [left + c, top + a, left + d, top + b]);
+        if (!box) continue;
+        const [x0, y0, x1, y1] = box, tw = x1 - x0, th = y1 - y0;
+        if (th < 10 || th > 40 || tw / th < .8 || tw / th > 7) continue;
+        const patch = [Math.max(0, x0 - 10), Math.max(0, y0 - 5), Math.min(width, x1 + 10), Math.min(height, y1 + 5)];
+        const area = (patch[2] - patch[0]) * (patch[3] - patch[1]), scores = {};
+        const allowed = mutedMode ? [0] : [1, 2, 3, 4];
+        for (const q of allowed) scores[q] = boxSum(qualities[q], width, patch) / area;
+        const ranked = allowed.sort((x, y) => scores[y] - scores[x]), q = scores[ranked[0]] >= .14 ? ranked[0] : null;
+        if (mutedMode && q === null) continue;
+        output.push({ bbox: box, badgeROI: q !== null ? badgeExtent(qualities[q], width, height, box) : null, qualityCandidates: q !== null ? [q] : [], qualityScores: scores, inkHeight: th, inkWidth: tw, inkDensity: boxSum(white, width, box) / (tw * th), inkMode: mutedMode ? 'muted' : 'white' });
+      }
+    }
+    return output;
+  }
+
+  function decodeTemplate() {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', bytes = [];
+    let value = 0, bits = 0;
+    for (const c of ANCHOR_BITS) {
+      const n = alphabet.indexOf(c); if (n < 0) continue;
+      value = value * 64 + n; bits += 6;
+      if (bits >= 8) { bits -= 8; bytes.push((value >>> bits) & 255); value &= (1 << bits) - 1; }
+    }
+    const data = new Float32Array(123 * 27);
+    for (let i = 0; i < data.length; i++) data[i] = (bytes[i >> 3] >> (i & 7)) & 1;
+    return { data, width: 123, height: 27 };
+  }
+
+  function resizeMono(input, width, height) {
+    const output = new Float32Array(width * height), sw = input.width, sh = input.height, data = input.data;
+    const intermediate = new Float32Array(width * sh);
+    const weights = (source, target) => Array.from({ length: target }, (_, i) => {
+      const scale = source / target, center = (i + .5) * scale - .5, radius = Math.max(1, scale), entries = [];
+      let total = 0;
+      for (let j = Math.max(0, Math.ceil(center - radius)); j <= Math.min(source - 1, Math.floor(center + radius)); j++) {
+        const value = Math.max(0, 1 - Math.abs(j - center) / radius); entries.push([j, value]); total += value;
+      }
+      return entries.map(([j, value]) => [j, value / total]);
+    });
+    const wx = weights(sw, width), wy = weights(sh, height);
+    for (let y = 0; y < sh; y++) for (let x = 0; x < width; x++) {
+      let sum = 0; for (const [xx, weight] of wx[x]) sum += data[y * sw + xx] * weight;
+      intermediate[y * width + x] = sum;
+    }
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      let sum = 0; for (const [yy, weight] of wy[y]) sum += intermediate[yy * width + x] * weight;
+      output[y * width + x] = sum;
+    }
+    return { data: output, width, height };
+  }
+
+  const anchorSource = decodeTemplate();
+  const anchorTemplates = [.9, 1, 1.1].map(factor => resizeMono(anchorSource, Math.round(123 * .5 * factor), Math.round(27 * .5 * factor)));
+
+  function findAnchor(white, width, height) {
+    const small = resizeMono({ data: white, width, height }, 432, Math.floor(height / 2));
+    const sw = small.width, sh = small.height, data = small.data, stride = sw + 1;
+    const sums = new Float64Array(stride * (sh + 1)), squares = new Float64Array(sums.length);
+    for (let y = 0; y < sh; y++) {
+      let row = 0, square = 0;
+      for (let x = 0; x < sw; x++) {
+        const value = data[y * sw + x]; row += value; square += value * value;
+        sums[(y + 1) * stride + x + 1] = sums[y * stride + x + 1] + row;
+        squares[(y + 1) * stride + x + 1] = squares[y * stride + x + 1] + square;
+      }
+    }
+    const sumBox = (integral, x, y, w, h) => integral[(y + h) * stride + x + w] - integral[y * stride + x + w] - integral[(y + h) * stride + x] + integral[y * stride + x];
+    const x0 = Math.round(sw * .42), x1 = Math.round(sw * .97), y0 = Math.round(sh * .22), y1 = Math.round(sh * .55);
+    let best = { score: -1, bbox: null };
+    for (const template of anchorTemplates) {
+      const tw = template.width, th = template.height, count = tw * th, offsets = [], values = [];
+      let total = 0, sumSquare = 0;
+      for (let yy = 0; yy < th; yy++) for (let xx = 0; xx < tw; xx++) {
+        const value = template.data[yy * tw + xx]; total += value; sumSquare += value * value;
+        if (value) { offsets.push(yy * sw + xx); values.push(value); }
+      }
+      const mean = total / count, norm = Math.sqrt(sumSquare - total * total / count);
+      for (let y = y0; y + th <= y1; y += 2) for (let x = x0; x + tw <= x1; x += 2) {
+        const sum = sumBox(sums, x, y, tw, th), variance = sumBox(squares, x, y, tw, th) - sum * sum / count;
+        if (variance <= 1e-8) continue;
+        const start = y * sw + x; let dot = 0;
+        for (let i = 0; i < offsets.length; i++) dot += data[start + offsets[i]] * values[i];
+        const score = (dot - mean * sum) / (Math.sqrt(variance) * norm);
+        if (score > best.score) best = { score, bbox: [x * 2, y * 2, (x + tw) * 2, (y + th) * 2] };
+      }
+    }
+    if (!best.bbox) return best;
+    // Coarse sampling has a four-source-pixel phase. Resolve only that tiny
+    // neighbourhood at full resolution, rather than lowering the title score.
+    const coarse = best; best = { score: -1, bbox: null };
+    for (const factor of [.9, 1, 1.1]) {
+      const template = resizeMono(anchorSource, Math.round(123 * factor), Math.round(27 * factor));
+      const tw = template.width, th = template.height, count = tw * th;
+      let total = 0, square = 0;
+      for (const value of template.data) { total += value; square += value * value; }
+      const mean = total / count, norm = Math.sqrt(square - total * total / count);
+      for (let y = Math.max(0, coarse.bbox[1] - 4); y <= Math.min(height - th, coarse.bbox[1] + 4); y++) {
+        for (let x = Math.max(0, coarse.bbox[0] - 4); x <= Math.min(width - tw, coarse.bbox[0] + 4); x++) {
+          let sum = 0, dot = 0;
+          for (let yy = 0; yy < th; yy++) for (let xx = 0; xx < tw; xx++) {
+            const value = white[(y + yy) * width + x + xx]; sum += value; dot += value * template.data[yy * tw + xx];
+          }
+          const variance = sum - sum * sum / count;
+          const score = variance > 1e-8 ? (dot - mean * sum) / (Math.sqrt(variance) * norm) : -1;
+          if (score > best.score) best = { score, bbox: [x, y, x + tw, y + th] };
+        }
+      }
+    }
+    best.fineScore = best.score;
+    best.coarseScore = coarse.score;
+    best.score = Math.max(best.score, coarse.score);
+    return best;
+  }
+
+  function unknown(input, reason) {
+    return { context: 'unknown', contextReliable: false, reason, layout: 'unconfirmed', nativeSize: [input.width, input.height], badges: [], completeKinds: { innate: false, acquired: false }, canClear: false };
+  }
+
+  function groupRows(badges) {
+    const rows = [];
+    for (const item of badges.slice().sort((a, b) => a.bbox[1] - b.bbox[1] || a.bbox[0] - b.bbox[0])) {
+      const center = (item.bbox[1] + item.bbox[3]) / 2;
+      if (!rows.length || Math.abs(center - rows[rows.length - 1].center) > 10) rows.push({ center, items: [item] });
+      else rows[rows.length - 1].items.push(item);
+    }
+    rows.forEach(row => row.items.sort((a, b) => a.bbox[0] - b.bbox[0]));
+    return rows;
+  }
+
+  function placeholderCandidates(image, masks, rows, modernStart) {
+    if (modernStart < 0) return [];
+    const first = rows[modernStart], second = rows[modernStart + 1], pitch = second.center - first.center;
+    if (pitch < 20 || pitch > 70) return [];
+    const centers = first.items.slice(0, 2).map(item => (item.bbox[0] + item.bbox[2]) / 2), step = centers[1] - centers[0];
+    const actual = rows.slice(modernStart + 2).find(row => row.center > second.center + 1.3 * pitch && row.center < second.center + 2.3 * pitch && row.items.some(item => Math.abs((item.bbox[0] + item.bbox[2]) / 2 - centers[0]) < step * .2));
+    const ybase = actual ? actual.center : second.center + 1.8 * pitch, output = [];
+    for (let r = 0; r < 2; r++) for (const cx of centers) {
+      const cy = ybase + r * pitch;
+      if (rows.some(row => row.items.some(item => Math.abs((item.bbox[0] + item.bbox[2]) / 2 - cx) < step * .22 && Math.abs((item.bbox[1] + item.bbox[3]) / 2 - cy) < pitch * .35))) continue;
+      const patch = [Math.max(0, Math.round(cx - step * .38)), Math.max(0, Math.round(cy - pitch * .32)), Math.min(image.width, Math.round(cx + step * .38)), Math.min(image.height, Math.round(cy + pitch * .32))];
+      const score = boxSum(masks.qualities[0], image.width, patch) / ((patch[2] - patch[0]) * (patch[3] - patch[1]));
+      if (score < .35) continue;
+      const box = tightBox(masks.muted, image.width, patch);
+      if (!box) continue;
+      const tw = box[2] - box[0], th = box[3] - box[1];
+      if (tw < step * .35 || th < pitch * .2 || th > pitch * .75) continue;
+      const data = new Uint8Array(tw * th);
+      for (let y = 0; y < th; y++) for (let x = 0; x < tw; x++) data[y * tw + x] = masks.muted[(box[1] + y) * image.width + box[0] + x];
+      output.push({ bbox: box, badgeROI: badgeExtent(masks.qualities[0], image.width, image.height, box), qualityCandidates: [0], qualityScores: { 0: score }, inkMode: 'muted', inkMask: { width: tw, height: th, data }, inkWidth: tw, inkHeight: th, inkDensity: boxSum(masks.muted, image.width, box) / (tw * th) });
+    }
+    return output;
+  }
+
+  function segment(input, options) {
+    validate(input); options = options || {};
+    if (input.width < 160 || input.height < 160) return unknown(input, 'image_too_small');
+    const scale = WIDTH / input.width, height = Math.round(input.height * scale);
+    if (height > 4096 || height < 600) return unknown(input, 'unsupported_aspect_ratio');
+    const image = resize(input, WIDTH, height), masks = makeMasks(image), words = wordCandidates(image, masks), anchor = findAnchor(masks.white, WIDTH, height);
+    const sourceBox = box => box && box.map(value => Math.round(value / scale * 100) / 100);
+    if (!anchor.bbox || anchor.score < .55) return { ...unknown(input, 'detail_heading_not_confirmed'), anchor: { bbox: sourceBox(anchor.bbox), score: anchor.score } };
+    const ay = anchor.bbox[1];
+    let badges = words.filter(item => item.qualityCandidates.length && item.badgeROI && item.bbox[1] >= ay - WIDTH * .36 && item.bbox[3] <= ay - WIDTH * .035);
+    let rows = groupRows(badges);
+    const aligned = (a, b) => a.items.length === b.items.length && a.items.every((item, i) => Math.abs((item.bbox[0] + item.bbox[2]) / 2 - (b.items[i].bbox[0] + b.items[i].bbox[2]) / 2) <= 12);
+    // A stat row can share the badge color. Locate a repeated badge layout;
+    // never let an unrelated earlier row change the section assignment.
+    let start = rows.findIndex((row, i) => row.items.length === 3 && rows[i + 1]?.items.length === 3 && aligned(row, rows[i + 1]));
+    if (start >= 0) {
+      badges = badges.concat(placeholderCandidates(image, masks, rows, start));
+      rows = groupRows(badges);
+      start = rows.findIndex((row, i) => row.items.length === 3 && rows[i + 1]?.items.length === 3 && aligned(row, rows[i + 1]));
+    }
+    if (start < 0) start = rows.findIndex((row, i) => rows.length - i === 3 && rows.slice(i).every(x => x.items.length === 2) && aligned(row, rows[i + 1]) && aligned(rows[i + 1], rows[i + 2]) && Math.abs((rows[i + 1].center - row.center) - (rows[i + 2].center - rows[i + 1].center)) < 12);
+    if (start > 0) rows.splice(0, start);
+    badges = rows.flatMap(row => row.items);
+    let layout = 'unconfirmed', completeKinds = { innate: false, acquired: false };
+    if (rows.length >= 2 && rows[0].items.length === 3 && rows[1].items.length === 3 && aligned(rows[0], rows[1]) && rows[1].center - rows[0].center >= 20 && rows[1].center - rows[0].center <= 70) {
+      layout = 'modern_3x2_innate';
+      completeKinds.innate = true;
+      const pitch = rows[1].center - rows[0].center;
+      const innateColumns = { items: rows[0].items.slice(0, 2) };
+      // Empty gray slots need an explicit placeholder-text match. Without that
+      // evidence, fewer than four acquired badges cannot authorize replacement.
+      completeKinds.acquired = rows.length === 4 && rows[2].items.length === 2 && rows[3].items.length === 2 && aligned(innateColumns, rows[2]) && aligned(rows[2], rows[3]) && rows[2].center - rows[1].center > pitch * 1.3 && rows[2].center - rows[1].center < pitch * 2.3 && Math.abs(rows[3].center - rows[2].center - pitch) < 12;
+      rows.forEach((row, i) => row.items.forEach(item => { item.kindCandidates = [i < 2 ? 'innate' : 'acquired']; }));
+    } else if (rows.length === 3 && rows.every(row => row.items.length === 2) && aligned(rows[0], rows[1]) && aligned(rows[1], rows[2]) && rows[1].center - rows[0].center >= 20 && rows[1].center - rows[0].center <= 70 && Math.abs((rows[1].center - rows[0].center) - (rows[2].center - rows[1].center)) < 12) {
+      layout = 'legacy_2x3_innate'; completeKinds = { innate: true, acquired: true };
+      badges.forEach(item => { item.kindCandidates = ['innate']; });
+    } else badges.forEach(item => { item.kindCandidates = []; });
+    const reliable = layout !== 'unconfirmed';
+    const result = { context: reliable ? 'disciple_detail' : 'unknown', contextReliable: reliable, reason: reliable ? null : 'badge_layout_not_confirmed', layout, nativeSize: [input.width, input.height], canonicalScale: scale,
+      anchor: { bbox: sourceBox(anchor.bbox), score: anchor.score, coarseScore: anchor.coarseScore, fineScore: anchor.fineScore }, rows: rows.map(row => row.items.length), completeKinds,
+      canClear: reliable && completeKinds.innate && completeKinds.acquired,
+      badges: badges.map(item => ({ ...item, bbox: sourceBox(item.bbox), badgeROI: sourceBox(item.badgeROI), inkHeight: item.inkHeight / scale, inkWidth: item.inkWidth / scale, defaultSelected: false })) };
+    if (options.includeMasks) result.masks = { width: WIDTH, height, scale, white: masks.white, muted: masks.muted };
+    return result;
+  }
+
+  return { segment, makeInkMask: (input, options) => {
+    const masks = makeMasks(validate(input));
+    if (options?.mutedOnly) return masks.muted;
+    if (options?.includeMuted) for (let i = 0; i < masks.white.length; i++) masks.white[i] |= masks.muted[i];
+    return masks.white;
+  }, version: 1 };
+});
+
+
+/* Fixed-vocabulary image matching. Scores are similarities, not OCR probabilities.
+ * No text engine, fonts, WASM, network access or platform API is used here. */
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.LaozuTalentLiteCore=api;
+})(typeof self!=='undefined'?self:globalThis,function(){
+  'use strict';
+  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+  const minWordMargin=.035;
+  function cropTight(image,threshold=80){
+    const {data,width,height}=image;
+    let x0=width,y0=height,x1=-1,y1=-1;
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++)if(data[y*width+x]>threshold){
+      x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);
+    }
+    if(x1<x0)return null;
+    const w=x1-x0+1,h=y1-y0+1,out=new Float32Array(w*h);
+    for(let y=0;y<h;y++)out.set(data.subarray((y+y0)*width+x0,(y+y0)*width+x0+w),y*w);
+    return {data:out,width:w,height:h};
+  }
+  function resize(image,width,height){
+    const out=new Float32Array(width*height),src=image.data;
+    for(let y=0;y<height;y++){
+      const sy=clamp((y+.5)*image.height/height-.5,0,image.height-1),y0=Math.floor(sy),y1=Math.min(y0+1,image.height-1),dy=sy-y0;
+      for(let x=0;x<width;x++){
+        const sx=clamp((x+.5)*image.width/width-.5,0,image.width-1),x0=Math.floor(sx),x1=Math.min(x0+1,image.width-1),dx=sx-x0;
+        out[y*width+x]=(src[y0*image.width+x0]*(1-dx)+src[y0*image.width+x1]*dx)*(1-dy)
+          +(src[y1*image.width+x0]*(1-dx)+src[y1*image.width+x1]*dx)*dy;
+      }
+    }
+    return {data:out,width,height};
+  }
+  function vector(image,size=24){
+    const tight=image&&cropTight(image,90);
+    if(!tight)return null;
+    let data;
+    if(tight.width/tight.height>2.5){
+      // Stretching a horizontal stroke such as 一 into a square destroys it.
+      const scale=(size-2)/Math.max(tight.width,tight.height);
+      const w=Math.max(1,Math.round(tight.width*scale)),h=Math.max(1,Math.round(tight.height*scale));
+      const resized=resize(tight,w,h),x0=Math.floor((size-w)/2),y0=Math.floor((size-h)/2);
+      data=new Float32Array(size*size);
+      for(let y=0;y<h;y++)data.set(resized.data.subarray(y*w,(y+1)*w),(y+y0)*size+x0);
+    }else data=resize(tight,size,size).data;
+    const mean=data.reduce((a,b)=>a+b,0)/data.length;
+    let sum=0;for(let i=0;i<data.length;i++){data[i]-=mean;sum+=data[i]*data[i];}
+    if(sum<1)return null;
+    const norm=Math.sqrt(sum);for(let i=0;i<data.length;i++)data[i]/=norm;
+    return data;
+  }
+  function dot(a,b){if(!a||!b)return -1;let sum=0;for(let i=0;i<a.length;i++)sum+=a[i]*b[i];return sum;}
+  function compile(pack){
+    if(pack?.version!==1||pack.engine!=='talent-lite'||pack.bits!==2)throw Error('字库版本不兼容');
+    const chars=Array.from(pack.chars),size=pack.size;
+    const bytes=typeof atob==='function'?Uint8Array.from(atob(pack.data),c=>c.charCodeAt(0)):Uint8Array.from(Buffer.from(pack.data,'base64'));
+    if(bytes.length*4!==chars.length*size*size)throw Error('字库不完整');
+    const glyphs=new Map();
+    for(let c=0;c<chars.length;c++){
+      const data=new Float32Array(size*size),offset=c*size*size;
+      for(let i=0;i<data.length;i++)data[i]=((bytes[(offset+i)>>2]>>((3-((offset+i)&3))*2))&3)*85;
+      glyphs.set(chars[c],vector({data,width:size,height:size}));
+    }
+    return {glyphs,words:pack.words.map(row=>({...row,chars:Array.from(row.name)}))};
+  }
+  function wordImage(image,bbox,localContrast=false){
+    const x0=clamp(Math.floor(bbox[0])-2,0,image.width),y0=clamp(Math.floor(bbox[1])-2,0,image.height);
+    const x1=clamp(Math.ceil(bbox[2])+2,0,image.width),y1=clamp(Math.ceil(bbox[3])+2,0,image.height);
+    const width=x1-x0,height=y1-y0,data=new Float32Array(width*height);
+    for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+      const i=((y+y0)*image.width+x+x0)*4;
+      data[y*width+x]=Math.min(image.data[i],image.data[i+1],image.data[i+2]);
+    }
+    // Downscaled white strokes blend into the badge color. Recover their edges
+    // from the crop's background level without changing the glyph templates.
+    const background=localContrast?data.slice().sort()[Math.floor(data.length*.2)]:155;
+    if(!data.length||255-background<40)return null;
+    const scale=255/(255-background);
+    for(let i=0;i<data.length;i++)data[i]=clamp((data[i]-background)*scale,0,255);
+    return cropTight({data,width,height},115);
+  }
+  function splitWord(image,count){
+    const chars=[],cuts=[0],pitch=image.width/count,projection=new Float32Array(image.width);
+    for(let x=0;x<image.width;x++)for(let y=0;y<image.height;y++)projection[x]+=image.data[y*image.width+x]/(255*image.height);
+    for(let i=1;i<count;i++){
+      const target=image.width*i/count,radius=Math.max(1,Math.round(pitch*.16));
+      const low=Math.max(cuts.at(-1)+2,Math.round(target)-radius),high=Math.min(image.width-2,Math.round(target)+radius);
+      let cut=Math.round(target),best=Infinity;
+      for(let x=low;x<=high;x++){
+        const cost=(projection[x-1]+projection[x])/2+.025*Math.abs(x-target)/pitch;
+        if(cost<best){best=cost;cut=x;}
+      }
+      cuts.push(cut);
+    }
+    cuts.push(image.width);
+    for(let i=0;i<count;i++){
+      const x0=cuts[i],x1=cuts[i+1],width=x1-x0;
+      const data=new Float32Array(width*image.height);
+      for(let y=0;y<image.height;y++)data.set(image.data.subarray(y*image.width+x0,y*image.width+x1),y*width);
+      chars.push(vector({data,width,height:image.height}));
+    }
+    return chars;
+  }
+  function matchBadge(image,badge,compiled){
+    const mask=badge.inkMode==='muted'?badge.inkMask:null;
+    const word=mask?cropTight({width:mask.width,height:mask.height,data:Float32Array.from(mask.data,v=>v?255:0)},115):wordImage(image,badge.bbox);
+    const first=matchWord(word,badge,compiled);
+    // An uncertain exclusion could hide a selectable slot. Only rescue a
+    // selectable name when both readings independently rank that name first.
+    if(first.accepted||!first.word||first.word.kind==='exclude'||first.margin<minWordMargin
+      ||badge.inkMode!=='white'||!(badge.inkHeight>=9&&badge.inkHeight<=16))return first;
+    const second=matchWord(wordImage(image,badge.bbox,true),badge,compiled);
+    return second.accepted&&second.word.id===first.word.id&&second.word.kind===first.word.kind?second:first;
+  }
+  function matchWord(word,badge,compiled){
+    if(!word||word.height<9)return {accepted:false,reasonCode:'unreadable',reason:'文字过小或不清晰',candidates:[]};
+    const qualities=badge.qualityCandidates||[],kinds=badge.kindCandidates||[];
+    const splits=new Map(),caches=new Map(),ranked=[];
+    for(const row of compiled.words){
+      if(row.quality&&qualities.length&&!qualities.includes(row.quality))continue;
+      if(row.kind!=='exclude'&&kinds.length&&!kinds.includes(row.kind))continue;
+      if(/[()（）]/.test(row.name))continue; // deprecated labels need manual selection
+      const count=row.chars.length;
+      if(Math.abs(Math.log(count/(word.width/word.height)))>.4)continue;
+      if(!splits.has(count)){splits.set(count,splitWord(word,count));caches.set(count,new Map());}
+      const observed=splits.get(count),cache=caches.get(count),scores=[];
+      for(let i=0;i<count;i++){
+        const key=i+':'+row.chars[i];
+        if(!cache.has(key))cache.set(key,dot(observed[i],compiled.glyphs.get(row.chars[i])));
+        scores.push(cache.get(key));
+      }
+      const min=Math.min(...scores),mean=scores.reduce((a,b)=>a+b,0)/count;
+      ranked.push({row,score:.75*mean+.25*min,min,mean,scores});
+    }
+    ranked.sort((a,b)=>b.score-a.score);
+    const first=ranked[0];
+    if(!first)return {accepted:false,reasonCode:'no_candidates',reason:'没有匹配词条',candidates:[]};
+    const next=ranked.find(({row})=>row.id!==first.row.id||row.kind!==first.row.kind);
+    const margin=first.score-(next?.score||0);
+    const observed=splits.get(first.row.chars.length);
+    let charMargin=Infinity;
+    first.row.chars.forEach((char,i)=>{
+      let alternative=-1;
+      for(const [other,glyph] of compiled.glyphs)if(other!==char)alternative=Math.max(alternative,dot(observed[i],glyph));
+      charMargin=Math.min(charMargin,first.scores[i]-alternative);
+    });
+    const accepted=first.mean>=.7&&first.min>=.52&&margin>=minWordMargin&&charMargin>=.02;
+    // Exclusions (personality, physique, placeholders) still compete in the
+    // identity test above, but can never be suggested as one of the four
+    // selectable talents. Filtering precedes the cap, so exclusions cannot
+    // crowd all selectable suggestions out of a close result.
+    const candidates=[],seen=new Set();
+    for(const {row} of ranked){
+      if((row.kind!=='innate'&&row.kind!=='acquired')||!Number.isSafeInteger(row.id)||row.id<=0||seen.has(row.id))continue;
+      candidates.push({id:row.id,name:row.name,kind:row.kind,quality:row.quality});seen.add(row.id);
+      if(candidates.length===5)break;
+    }
+    return {accepted,word:first.row,score:first.score,margin,charMargin,min:first.min,mean:first.mean,
+      reasonCode:accepted?'':margin<minWordMargin||charMargin<.02?'ambiguous':'weak_glyphs',
+      reason:accepted?'':'字形或相似词差距不足',candidates,ranked:ranked.slice(0,3).map(r=>({name:r.row.name,score:r.score,min:r.min}))};
+  }
+
+  const kinds=['innate','acquired'];
+  const sectionName=kind=>kind==='innate'?'先天':'后天';
+  function topLeftBox(raw,image){
+    if(!Array.isArray(raw)||raw.length!==4||!raw.every(Number.isFinite))return null;
+    const [x0,y0,x1,y1]=raw;
+    if(x0<0||y0<0||x1<=x0||y1<=y0||x1>image.width||y1>image.height)return null;
+    return {x:x0/image.width,y:y0/image.height,width:(x1-x0)/image.width,height:(y1-y0)/image.height};
+  }
+
+  function recognize(image,segmentation,compiled){
+    if(segmentation?.contextReliable!==true||segmentation.context==='unknown')throw Error('未确认完整弟子详情截图，请手动选择天赋');
+    const layout=segmentation.layout;
+    const expected=layout==='legacy_2x3_innate'?{innate:6,acquired:0}:layout==='modern_3x2_innate'?{innate:6,acquired:4}:null;
+    const observed={innate:0,acquired:0},unlocated={innate:0,acquired:0},ambiguousSection={innate:false,acquired:false};
+    const completeKinds={},safeToReplace={},matches=[],diagnostics=[],unresolved=[],records=[];
+    const acceptedIds={innate:new Map(),acquired:new Map()};
+    for(const badge of Array.isArray(segmentation.badges)?segmentation.badges:[]){
+      const possible=kinds.filter(kind=>badge?.kindCandidates?.includes(kind));
+      if(possible.length!==1){
+        for(const kind of possible.length?possible:kinds)ambiguousSection[kind]=true;
+        continue;
+      }
+      const kind=possible[0],box=topLeftBox(badge.bbox,image);
+      if(!box){unlocated[kind]++;continue;}
+      const order=++observed[kind];
+      const key='badge:'+kind+':'+order;
+      const result=matchBadge(image,badge,compiled);
+      records.push({key,kind,order,box,result,placeholderBadge:badge.qualityCandidates?.includes(0)===true});
+      diagnostics.push({key,bbox:badge.bbox,...result,word:result.word?{name:result.word.name,kind:result.word.kind}:undefined});
+      if(result.accepted&&result.word.kind===kind){const id=result.word.id;acceptedIds[kind].set(id,(acceptedIds[kind].get(id)||0)+1);}
+    }
+
+    for(const kind of kinds){
+      // Structural evidence is separate from word confidence. An inconsistent
+      // completeness flag, e.g. four claimed acquired slots but only three
+      // locatable badges, must never authorize a silent deletion.
+      completeKinds[kind]=!!expected&&segmentation.completeKinds?.[kind]===true&&observed[kind]===expected[kind]&&!unlocated[kind]&&!ambiguousSection[kind];
+      safeToReplace[kind]=completeKinds[kind];
+    }
+    for(const {key,kind,order,box,result,placeholderBadge} of records){
+      const row=result.word;
+      if(result.accepted&&row.kind==='exclude')continue;
+      const duplicate=result.accepted&&acceptedIds[kind].get(row.id)>1;
+      const overflow=result.accepted&&acceptedIds[kind].size>4;
+      if(!result.accepted||duplicate||overflow){
+        safeToReplace[kind]=false;
+        unresolved.push({key,kind,order,scope:'badge',reason:duplicate?'duplicate':overflow?'over_capacity':result.reasonCode,
+          reasonText:duplicate?'多张牌匹配为同一天赋，请分别核对。':overflow?'匹配的不同天赋超过四项，请核对这一类。':row?.kind==='exclude'?'字形更接近非天赋词“'+row.name+'”，请对照截图。':result.reason,
+          // Unlike historical matches[].bbox (bottom-left), this box is ready
+          // for an image/canvas crop with the conventional top-left origin.
+          bbox:box,bboxOrigin:'top-left',candidates:(result.candidates||[]).filter(candidate=>candidate.kind===kind),
+          allowFullCatalog:true,allowNonTalent:true,defaultSelected:false,mayBeNonTalent:placeholderBadge||row?.kind==='exclude'});
+        continue;
+      }
+      matches.push({key,id:row.id,name:row.name,kind,order,confidence:result.score,scoreType:'glyph',sourceText:row.name,
+        defaultSelected:true,bbox:{...box,y:1-box.y-box.height}});
+    }
+    for(const kind of kinds){
+      if(completeKinds[kind]||(!expected&&!observed[kind]&&!unlocated[kind]))continue;
+      unresolved.push({key:'region:'+kind,kind,scope:'region',reason:unlocated[kind]?'unlocated_badge':'incomplete_region',
+        reasonText:sectionName(kind)+'区域未完整定位，请核对该类全部天赋。',bbox:null,bboxOrigin:'top-left',candidates:[],allowFullCatalog:true,defaultSelected:false,
+        expectedSlots:expected?.[kind]??null,locatedSlots:observed[kind],missingSlots:expected?Math.max(0,expected[kind]-observed[kind]):null});
+    }
+    return {engine:'talent-lite',context:'disciple_detail',contextReliable:true,layout,matches,lines:[],completeKinds,safeToReplace,unresolved,diagnostics,
+      warnings:kinds.filter(kind=>!safeToReplace[kind]).map(kind=>sectionName(kind)+'区域需要核对后才能覆盖。')};
+  }
+  return {compile,matchBadge,recognize};
+});
+
+
+const TALENT_GLYPHS = {"version":1,"engine":"talent-lite","size":20,"bits":2,"chars":"()一万不世丙业丹主乐习乡乾云五产人从仙伏伐传伯似位体余侥侵保修倒倾偃健偷傅元先克全公共关兵再军农冥决冻凌凝击刀刃分刑刚利刺前剑力功动劫势勇化十千博历厉厚双反取变可后吸员命和咏品商善喧器噬四回固圈土圣地坝坤垂基堂境增壁士壬声处夜大天夺奇好如委威子守宗官定宝实客家容富寒封将尉尊小少尔尚尽屠山岳崩川工市师希帝幡年幸幽庄庇店庚废廉建异弃引弟强归形影往律徒得御循微德心忠怒急性息情惊惑惧愈意感慎慑憨戈戊成战所扈手才扎打扬承技抗护拆招捅换捣授排搬摄摸撼教敢文斗斧斩方旗无明映春昭景暗替月朔朝木未本术机条极果枢枪枯柔校棍森植榜武殇殒殛毒民气水汉汲沉沥沧河沸泉法波泥泰泻派流浑浪浴海涌涤润混温游溟滚漱潮澜澡灌火灭灵灼炎炼炽烈烤烬热焊焚煞照熟燃燎爆爱父牛物特狂猎玄玉王环珠理琉琴璃生甲电畏疾痴白百皇监盗直相真石矿砖破碎碧磐神祭福离禾种积稳窍竞童竹精红约线绝缘罗罡罪美翁翔翼老聚肉育胆背胎胜能脉腾舍舞芒花英荣荧药莲获萝蒙蓄藏藤虎虚虹蚀蛊蛰蜚血行衔衣裁裂覆见觉誓诏诡详谨豪贯贴赋赐赤趁超足跋路躁身转载辰迁进迫逆通道邪部醉醒里重野金鉴钧钱钳铁铎铩锄锅锋锐锤镇镖长闪问闯队防阳阴降限雀雄雅雪雳雷霆震霜霸霹青韧音顶风飞饮香骨髓高鬼魂魄魇魔鳄鳞鸣鸿麟黄黑鼠龙龟","data":"AAFqqqUAGv///gG////6Br///+Qb///+UGv///4Ar///6QC////lAP///+AA////0AD////QAP///9AA////5ACv///lAGv///kAG////lAGv///5ABv///qABr///8AAWv/pRaqqUAAW///pAAb///6QAG///+QAG///+QAG///5QAG///6AAW///oAAb///wABv///AAG///8AAb///wAFv///AAb///oAG///+QBv///kAb///6Qa///+QFv//+UAGr/6UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////+D/////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAv////////////2q/qqqqAC4AAAAALgAAAAAuVVVQAD////QAf///9AB+VVX0AL0AAfQAvAAA9AH4AAD0AfQAAPQC8AAB9AfgAAH0D9AAAfQvQCpW9L4Af//g/QAb/9CkAAFpQG/////5v/////5qqr/qqQAAL0AAAAB+AAAAAL0AAAAC/QAAAAf9pAAAL/39AAC+vX+ABvl9H+Qb5H0G+b+QfQG+/gB9AC9kAH0ABQAAfQAAAAB9AAAAAH0AAAAAfQAAAAB4AAAGQGQC0AuAuAfQC4C4B+ALgLgH4AuAuAfgr+r+q/r//////6/7/6/6C5C4B+ALgLgH4AuAuAfgC4C4B+ALgL0H4AuAv//gC4C//9ALgBVVQAuAAAAAC+qqqqQL/////Qb////9v/////7//////mqqvqqpAAB9AAAFVb1VUC/////0f/////h+Vb1VuH0B/QC4fQL/gLh9B//guH0L5vi4fS/Rvrh9v4Bv+H7+ABq4frgAALh9AAAAuH0AAGr4fQAAf/QtAAAaoAACgoAAAAfH0AAAB9fQAGQH19AeuAfX0C99B9fQLi4H19B+L0fX0L0fR9fQuAuH19H4C9fX0vQH19fX4APn19fQAufX24ABl9fWQAAH19AAAAfX0ABVW9flVb//////v/////8GqqqqkAv////wC+qqq/QLgGQC9AuAuAH0C4C9AfQLgH4B9AuALwH0C4AaAfRv6qqr+f//////r+qqq/4LgAAC9A+AAAH0D0AAAfQfQAAB9C8AAAL0LgAAq/R9AAH/8HgAAK+QAACkAAAAAPkAAAAAvgAAFVV+VVQv/////S/////9BVV+VVQAAH0AAAAAfQAAAAB9AAAaqr6qpC/////4Gqr/qqQAAH0AAAAAfQAAAAB9AAAAAH0AAFVVvlVVv/////+//////gaqqqvkC/////Qf6qqqkB9AAAAAH0AZAAAfQB8AAB8AHwAAHwAfAAAfVW9VVB/////9H/////0BVW9WVAH0HwuAAvQfC9AH4B8G9B+AHwH4f0AfAL39Bq8ALqQL/wAZAAb+AAC/////+f//////r/////8BoAAALwH4AAAvAf0AAC8AvgAALwB/QC0vAB+Bvi8AC9b9LwAGn/QvAAG/0C8ABv5ALwBv+AAvBv+QAD8v/gAAfn/kBUC+fkAL6v0QAAv/+AAABr+kAAbQAAAAG9AAAAB/gALgAv0AG+AL5AG/kG/lWv4Af///5AVqq/+AHwAH+QAvAG/gAC4C/kAAfhv+qqr9L/////gqqqqr4AAAABvQAAABv0AAABv9AFVq/+QA///6QAD//pAAAAGgApAAAvQH0AC//5v//v//7///VvVvlVVr+r4AAH///lVUfVuf//h+q4av9H//gB/QfVuAf0B9W4G9AH//gvQFb/6L4B9W9V+AL////0Avv///QG8C9C///gHgC//5AaABVVAL////4Av////0BqqqqqAAAAAAAAAAAAAAAAAAAABqqqqqqr//////aqvqqqoABtAAAAAb4BUAAC+ALgAAvkAvgAL4AAvQB+QAB+Af0AAC9C/qqqv4L/////0aqqqVfgAAAAAtf/////h/////+Cqv6qqkAAfQAAAAB9AAAAALwAAAABuQAAAv////gC/////AGq/qr9AAH0ALwAAfQAfAAC9AB8AALwALwAAuAAvAAD4AC4AAfgALgGq+qq/p/////////////gAAKQAAAAB+AAAaqr+qpS/////+Gv+qv+kAfQAfQAB+AC9AAC9AfgAar+q+qS//////L+qqqqouAAAAAC4AAAAALgAAAAAuAAAAAH0AAAAAfQAAAAC9AAAAAPgAAAAAtAAAAAAAAC0AAAAAfgAAAAB+AAAAAH4AAAAAfgAAAAC/QAAAAL9AAAAB/4AAAAH/0AAAAvfgAAAH4vQAAAvR+AAAH4C9AAB/QH4AAb4AL4AG+AAf0BvgAAf0f4AAAv7+AAAAv6QAAAAuAGQAdAAAuAC4AAC4ALgAALgAuAAAuAC4AAC4ALgAALkA+AAAvkH4AAC/gf0AAfvh/QAB9vr+AALgv/4AA9Ab30AH0B+LgA+AL0fQL0C+AvB+AvgB+Lgb4AC9ZD+AAG4ALgAAGQKQAGQAB+AA+AAL1kH4GgvbwfgvH4vB+C8fi8H4Ly+Lwfgvf4vB+C//i8H4L/+LwfgvW4vB+C8Li8H4LwuLwfgvC4vB+C8Li8H4LwuLwfgvC4vm/r8Li////wuG///+B4AAAAACkAeGQAfQC9vQB9AL1/QLgAvR+A+AC9BkH1qv6qkvr////n9v///5v0Ab4AD/QA/wAK9AH/gAC0Av/QALQH5+AAtAvS9AC0H4H9ALQvQL4AtL4AL4C1/QAf4Lb4AAfwYaAAAZAeALSkAC4B9L4APgH0b4B9AfgLgL0F+avh/b////L9//6qV/xVvQEL/AB9C0v8AH0fRbwAPn4AfAAvvQB8AB/0UHwAH+HwfAG/0fB8G//l8H2/5frwfb5Av/B8EAAv4GQAAAaACQBoAAAfQLgAAC+q/qqQfr////C9avqqkfgB9AAC+Vb5VVf6//////q////q+AfQAAC4B9AAALgL+qqQuAv//+C4AVVv0LgAAG9AuAal/QC4C//4ALgBv/5AuAAFv9BkAAAWgC0AH0AAfQAvQAC8ar+qkPn////x9f6qq/L1+AAC9/X4AAL79fgAAv/1+AAC+vX+qqvx9f////H1/qqr8fX4AALx9fgAAvH1+AAC8fX4AALx9flVVvH1////8fS////goAAAAABkUAABQLm0AAeA+fWQC4H19vQLgvX1vQuC8fR+C4fx9C9Li/H0H4uP8fQHi4/x9AELQvH0AA9C8fQaH0Lx9b4fAvH7+S4C8f/kfgLx/kH/QvBkW//S8Br/l+HwL/kC4aAaUAGQGQApAAA+AH9AAH5Vb5VQvv///+C9v///4fgVABUC+CkAGQf4PgAvC/guAC4L+C8APgb4H0B+ALgfQH0AuA+AfQC4C4C9ALgLgLgAuAZB+AC5aqr6ULr////wuaqqqqB0AAAAAAoAGQAAH0AuAAAvQC4AAD5qv6qQfv///+C9av+qkv0Av0AH/QH/gAv9Av/QC/0H//QBfQv/+AB9H669AH1+Ln9Afb6/r9B+////4H7mv6bwfUAuAFB9AC4AAHwALgAAJAAdAAAABuAAAAAf+QAAAb//kAAb+S/5Ab/gBv+b/5VVv/v////+4W////gABVblUAFVVuVVR//////X/////9FVVuVVQAbS4eQAC9Lh+QAvQuC+Qb4C4C+G9avgC9eS/+AC0QGv0ABAHgHgAAAuAfVagH5r///Qvv///kC5qvm9AfgAfv0H9AG/5av0a//R//b/6/r19alC/+D5VVWv0Pv////g+v///+D0C9fQAPQLh9BQ9B+H0fD0b0fR8Pr9B+vwv+QH/+CqkAGqQHhVVVUAfb///4C4aqqvgLgVVVuB9H///4L0aqqvgvC///+H8GqqqkvxVVVVW/b////x9+qqqvH32qqq8ffv///h9p+q/tHwH0H5AfAL5/QB8AL/4AHxa//6Uff/6v/g4qlAWpB4FVVVALm///9Auf///4D19VVbgfX0AAuC9fVVW4f1////i/S///9P9AV9VA/2qr6qpff////x9ar/qpH0Av+AAfQL/+AB9C//+AH0vn2+Qfb5fS+R++R9C+H2QH0BkKAAKAAAaAC0AAB4AvqqQLgH///Quq/qr4H2//QvQfbpvr0C9tB/9Af21r/6S/bv+r/q9upbVqC20G9kALbb+rlAtu/r+tC22W/r0LbW/m+Atu/5vgC2mpv4ALQGv9AAtC/+QABQGpAAAHlVVABQv//+UfC////18fW+VfXy9Lhk9fLx9Ln19+blvfX75//+9f/n/+/1++FfRvXy4B9A9fLlr6n18uf//vXy5q/p9fLgH0C18uAfQFHy4V+pAfL7//5q8uv+qb/xoVAAG+B6gaqqkL/S///wu9Gq+pH70AL0AffQa/qC99C//9P36vlb1/f/9Zfb9+W159v30LXn1ffQtefR99C159H30LXn0ffVtufR9+/70oH3/lvZQff5b29B9pH+G9HwAvQG0KABkABAeBVVVUB9v///4Lr////gueVVVUH55///gvnn1VuC+efqq4f55+qvi/nn6quP+eL//0a54W9VQLn////gufr6v5C54vV9ALni//0AueG//4C55/5bgLn//qvguf////C0VVVVUCkAB4AAfqlr6gB//b//QLm9W5uAtLlb25H19v//4vbha+uX9/lbm4v7/r//S/a+a+oF9C1blQD6bb//gPu9r+pA+/lblUD2+v//0PX5r+qA9v5bgAD77//qkP+G///gukBaqpApAG4AAH0G/5AAfR/r+QB9v4H/kL//qr/g////+uH5WqqkAviqpUZH+f/224v5+vrrj/n1uuuG+f/664C5+vrrgLn1uuuAuf/664C5//rrgLn0tZuAufW0q4C5+/X/gLXm5L9AoAC4BkD1Vblbgf/////S+////+Llqv6qp+f///9H5+W5b0vn6v6vT+f///9P59W5b0bn////Qufq/q8C5oC0bgLmqqq+kuv////i5r6qvpLgfQC4AuAvWvgC4Bov+AGQAAakAL////4Av////0BqqqqqAAAAAAAAAAAAAAVVVVVVT//////v/////+Va+b6VUAL0fgAAAvR+AAAC8H4AAAPgfgBQB9B+AuAL0H4C8C+AfgLxv0B+V+f9AD//7+QAH/+agAAFqQAKA9AAAB9H4AAAL1flVQB/////gf////+C+VvlVUfgB+AAB9AH4AAFVVflVUv/////7//////lVvm+VVAB9H0AAAH0fQGQAuB9AvAL4H0C8G+AfQPm/0B/q+v5AC//25AAGv5AAAeAAAAAC9AAC//////b/////+VVW9VVQBVb1VQAv////gD////+APgAAC4A9AAALgD6qqq+AP////4AavqvqQAC9B9AQAPgH0HgC9AfQuBvgB9G5v4AH//v9AAL/5uQAAFVAAALkAAAAC/0AAAAv/5AAAb5b5AAH+QL+AG/gAH+R/0AAH/v//////pv///5oBqr6pQAAAfQAAAAB9AAAGqr6qkAv////QBqr+qpAAAH0AAAAAfQAAFVW9VVR//////H/////4ABoAeAAALwC8AAAuAH0AAH0APgAAvAAvQAH4AB+AB/QAC+AL4BAH9C+BtAH5f0L4AL69C+QAL2Qf0LgJAH9AvQAAvgB+AAL4AC+AB+QAH9AL5Vav4B/////0C//+qvgBVVAAuAB9AC4AAH0ALgAVvlV+VH/////9f/////4VvlW/VAB9AC4AAH0ALgAAfQAuAFW+VX9Vv/////+//////xVVVVVVABoAZAAAfgC+AAH9AH+QB/gAH+Qv4AAG/b9AAAC+eQAAAC4B4AALgAH4AB+AAL0AL0AAfgB+ABr/qv+oL/////wFVb5VVAAAfAAAAAC8AABVVb1VVb//////f/////4AAv+QAAAH69AAAAvS9AAAb0H9AAH+AH+Qb/QAG/m/kAAC/rkAAABuAFVVqtAH////4Av//+qQC9VQAAAL0AAAAAv////4C/////gL1VV/VAuAAC4AC4AALgALgAAuAG/qqr+p//////9qqqqqqQBUABQAAbgAfkAG+ABv0G/gAAv4/0AAAb35AAAAKX/////+f/////4VVb5VVAFVflVAC////+AL////9AuVfVX0C5W+VvQL////9Avqvqr0C4B9AfRvqr6q+f//////v/////4fgAAB9AuAAAH0C4AAAfQLgABq9AuAAH/wCkAAKpBv/////b/////+uVblVX64AvAAPrlb5VV9f/////kX////1AG+VVVAAfgZAAAC9C4AAAf6r6qQB////+ACqr+qkAAALgAAVVVvVVX//////r/////+AAAvAAAAAC4AAAAAGQAAAAApAAAAAH4AABqq/6qof/////1+qv6qvX0C/QB9fQf9ALgoC/4G9AAfr0vQAH5fr0ABvgv+AAb+B/gAG/4B+AB/vgC+AL5+AC+QZD4AC/QAPm5C/gA//gBuAD/5AAQAL5AAAH/////9v/////69VVVVfr1VVVV+f/////kb6qqr4AfVVVbgB////+AH6qqr4AfVVVbgB////+ACq/+qkAAAvgAAaqq/qqr//////2qrqv6pAG+AvpAW/4C/+S/5ABr+LpAAAG0AAAtAAFQAC4AAuAVflUC+H///4C9f///gH4VfguAL0A+C4AbQD4LgAUAfguAGqr/r/gv/////C5Vv5VUfQC/gAC9AfvgALgG5vQB+BvR/QL0b4B/g+b+AB/n2+QABvlGkAAApUAB4AAC0Fb1VVLm////9fb////kuB+VVUC8H0ZAAHwuC0AAFH0LQAAAvRuAAAW////QLr///+A+VV+VQH0GS1kAfR+LX0C4L0tL0fh+C0fi9f0LQvfi9V9Au9KS/0BlQAH/QAGQAB9AAuAar6qR9C///+D4Gq+qkLgAH0AAfb////g9////+BRX5b5QABvgf9AEv5Ab9C26+VbkPVf//9B9H+q/gL2/0H9Auf/1vQH5pv/4AfQB/+QC9a///pfr/6W/+UbpABr5QtFBVULS6+v/4ub/m//h9ummm9D65ffvgLr/4v4AevqVvlAm5V//+AL/6r74B/+Vfbh7rgp9tLq+X36k////f/n6vq5+pfR+XnwC8L+vvALh+//9A+fh/v+mm9C4b/wLQLQGq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v/////6//////6qqqqv6AAAAAuABVVVC4Av//9LgH///4uAflVbi4B9AAuLgH0AC4uAfQALi4B9AAuLgH6qr4uAf///i4AqqqpLgAAAAAuAAAAVH4AAAL//gAAAv/9AAAAaqQAVWqq/0H/////Qv///+oC9VVQAALkAAAAAv6qqqqi//////L6qqqqkuAAAAAC4aqqqgLi////QuL6qq9C4uAAH0Li4AAfQ9LgAB9H0uAAH0vS5VVfT4L///9Pgf///gpAVVVUAVUv//4L/7///w//m/q+D5+D4H4PS4PgfQ9Lh+C9T0uH4L/vS4f0v/9Lh/RX70uL+AffS4u9B99Ln24Lj0uvH19Pr64L7w///Qf9Cqv4B/0ABvRv/kAb6v5v0C+f6AvwGhpAAaC/////Qf////9B+VVVb0H0AAAfQfqqqq9B/////0CqqqqqQFVVVVUB/////4L/////0uVVVVvS4AGAB9LgB9AH0uAL0AfS4B+EB9GQb1+WQAb+L/5Gv/gG/+v/kABb9qUAAAGgAAvkAAAAb/5AAAb+r+QAb+QL/kv/6qr/7/////rmVqqqoEAVUBVVAb/4b/+B//2//4L1vb1bguB9vAuC4H28C4LgfbwLguB9vAuC5H28C4L//b1bgf/9vf+AVVS9rkAAAHgAAVavgVVG//+b/+f/+W//8VfgL1bwA+AuAfar+m4B+///rgH2v/puAfAf4C4B8B/0LgHwP/4uAfC//24B8fvv7gHy9+f+Afvj4W4B/4PgLgH1A+AvVvAD4C//8APgG//gAtAAAAAAB+kAC/oH/6QP/gG/+A+vBVqoD18v/gAPXx//Ap9fAG9H719VL1/fX/+v/09f/6/9D19fr/QPXx9v9A9fL2+4D19uL34P/70vL0//+C8fhVv0LwfgD9q/AvAGX/4AkAAGuQABqqqqqkL/////gv6qqr/C9AAAH8L0AAAPwvlVVV/C/////8H/////gFVVVVUGqqQaqpv//X////r9f6//gL1+Bv+AvX0C/4C9fQL/gL19Av+AvX0C/+r9fqv///1///v/+C//4AAGQAAAAAvQAAqqr/qqr//////1V+Vb5VAC8AvQAVb5b6VH/////4vqvr+r28G4L0fbh/Qf59uv5Vv725v//+fbh+qr19uHwAfX24fVV9fbh///19uCqqvr24AAAv/WQAABqkAGgAKQAFvVV+VC/////9L/////0VVX5VVC/////4H/////hqqr6qqb//////a/q/r+oC4H0LgKv+/6/qv/////5aqqqqpQb////QC/////ALlVVW8AuVVVbwC/////AH////4AAABoAAAAAH0ACqmq/6qP/v///9++9VVX3272qpffbqv/+p9tBqqkD20aqqkPbX///09tflVvT21+VW9PbX///09tfqqvT219VV9PvX///0/9KqqqC/1VVVVBUf///+AB////4v/4f/+H//y//8flvb1bx9B9uAfH6r2+q8f//b//gaqvq/pBVW+W5U//////7//////1W/lv5VBv0B/kBv/kL/+f//1////6vb6v5uA9uAuC4D24C4Llfb6vgv/9f/+B//gr/kAAfQLQBql9B+QP/r/7/+/+////72//r71Pb+f+bQ9ulqkpD2/////vb////+9ubr19T259fH0Pbn18vA9uvn29D27/vf5Pb//+/59v5//r76+Rv9Lv/lW+lZv/////8Vv////r/////9//////7+r6v6vvgfQuA++B9C4D74H0LgPvgfQuA++B9C4D74H0LgPvgvQuA++C4C5H74fgL//vr9Av/+//QAqr7/0AAAPvlAAAA++AAAAD7+qqqqvr/////+f/////2v////+v///////qqqqr/4AAAAL/hqqqkv+P///i/5/qq+L/n0AD4v+fQALi/59AAuL/n0AC4v+fQALi/5+AB+L/n///4v+f///i/4aqqpL/gAAAAv/qqqqr///////7/////+aqqqqqn///////6q/6q/+AB9AC/+qr6qr//////////////5VX4Ab/hVvlUv+f///2/6////b/r1VV9v+vQAH2/69AAfb/r///9v+f///2/4aqqpL/lVVVVv//////+//////n/////9v/////6+vr5uvrh9fS4uuH6+vm65////rrmr+qpuvqv+qr6/////vrl/lb5uub///76////7/r/+GvW+vW0v9m64LgVXrrgvqq9uuBv/+i69Vqqpfr/////+f/////0AAHgAAAAAfQAAAAB9AAAAAH0AAAVVvVVQH/////gv////+AaqvqqkAAB9AAAAAH0AAAAAfQAAAAB9AAAAAH0AAAAAfQAAAAB9AAAAAH0AAAAAvQAAaqr/qqm//////m/////5D/////AP////9Ab+VW/gAL4Ab4AAL4H+AAAb6/gAAAb/0AAAW//UAGv/7/6kv/5a//1qUC0a/QAAfQBUCqr/qqQf////+AqqvqqkAAB9AAAAAD0AAFVVvlVVv/////+//////gJAALQAB8AAuAAL0aC4ZAvR9Lr9C9H0//5r5fr/vr/+//l+v///+H4L3/n4fgvb9Lh+C9H0uH4L0fS+vgvR9L/9C9H0uqQL5fS4Ggv+9KQfH/r0AB+/5flVf75Av//+VABv//gGgBVVUAuBv//5C4H///4LgvlVvgvS9BB+v/r0tH6//vS4flvW9Ph+C4L0+H4LgvT4fguC9PR+C4L19H4L6vX0fgv+4uAtH/gH6kS/kBvf0P0Af0v4UAb9Av4AH+QAfwAfgAAaBkAA9AALgAH0AAuAAfgAC4b///4bm////7//1vlvv/+B9C9b29b5bwuL////C4v///8Li4H0LwuLgfQvC4vq+q8Lm////wv////+H/QB+AC/kAH0APkAAfQAUAAB9AAAAACkAAFVVavgC////+AL///qUAVVfgAAGqq+qqkv/////hr6vq+pAPQ9C0AB9H0bQL/////+v/////9V+X5flQD0LQtABfV+X5Qv/////S/////9BVVuVVQBVX5VUAv////0B/////QC4AAHgGv6qqvp//////+r+qqv+gLlVVvQAv///4AC+qqrgAL6qq+AAvqqr4AX5VVb1L//////v/////9W/Wl/lQf5fW/gb/////n/////v/hVvlUvZVW+VVl//////n/////+BkBoBkALgL0LgAvQvR+Aa/r+v6T//////f6qqqr+9VVVVX76////frv///+pF9VVX0AH5VVfQAf///9AAv///0ABVX5VABqq/6qkL/////gVVb5VUBVVflVUv/////6//////gUAAeAAC0VW9VQLX////gtb/q/5C0C4C9Afmv6v6r//////f+qqqqkfhv//5AtL///4C0vqqvgLS///+AtL6qr4C6v///gf+///9G/QfX5ZvkC8fR9UWvR+bwC/4C/+ALpAG/gGQH0BoAuAfkb0C4b///4Li////xvblfVvv/+p9e+//6727xvbmvefC8vv//8Ly////wvBqqqpC8GqqqgL2////gv/+qq+C/vlVb5v5////v5D+qq+qAPlVX4AAv///gAB///5AAAAKQAaqoV+VC//7//+Llvv//4uV9fm5C//wuLgL6pb+/kuVW///y//mr+pf/uAbkB/15v/+brnn//9+v+FflSlqqguAAaqvr6gD/////gKqv+qpFVVvlVVv/////6//////gAAKQAAAAB+AAAAAH4AAAAAfgAAAAB+AABv/////r//////aqq/qqoAAH4AAAAAfgAAAAB+AAAAAH4AAAAAfgAAAAB+AAAAAH4AAAAAfgAAAAB+AAAqqv+qqH/////4KqqqqqQAAAFWpBqqq//4L////+Qaqr5VAAAAfQAAAAB9AAAAAH0AAAAAfQAAVVW+VVX//////v/////+VVW+VVUAAH0AAAAAfQAAAAB9AAAAAH0AAAAAvQAAKqr/qql//////i/////5AABoAABqqr6qqf/////+aqq+qqkAAH0AACqq/6qoP/////0aqqqqpB/////4L/////0vVb1VvS8AfQB9L6q+qr0v/////S+qqqqkLgAAAAB9AAAAAL0AAAAA+AAAAAC0AAAAAAKQAGgAB+qkvAAH//i8AAvq/L0AC4C4vgAfQLi/gB9A+L/gLgH0v/S+AvC9+f9C4L2+/4fQvC9b29C8GgfvgLwAAv9AvAAB/gC8AAH/gLwAB//paABv1v/6qf5Ab//++AAFqqkAAGgAAAAAfgAAaqr/6qq//////lVVaVVVAGBpVVAB9L//9ALh/qv0B9L2QfQfh+vh9H+f5/bg/6/1q9CvrvgL0AuEfh+AC4AvvkALgAv9AAuAG/5AC4b/r+kLn/kG/gtKQABZAAApAAAAAH0AAAAAfQAAAAB9AAAAAH0AAGqq/6qpv/////5qqv+qqQAA/0AAAAH/gAAAAufQAAAH0uAAAAuB+AAAL0C9AAC+AH9AAvgAH9AL9AAL9G+QAAL+vkAAAL9oAAAAGi/////0L/////Qaqv6qoAAAvAAAAAC8AAAAALwAAGqq/qqov/////1v////+AAB/kAAAAL/QAAAB/+AAAAL7+AAAC+X9AAAv0L9AAb9AL+AH/QAL/S/kAAL/v5AAAG+ZAAAABkAAHgAAAAAvQAAb/////m//////hVb7+VUAB+X9AABvkG+UFv5AC/5v5AAL/6+VVVuaX/////4L/////gG5VVuUAH0AC4AALgALgAAfQAuAAAuAC4AABouvgAAAC/+AAAABqgAAAAtAAAVVX5VVH/////+f/////4VVvqVVABv5vlAG/+C/+Qv+QBr+G+lVVr5//////6qqqqv+gVVVUfgC///0+Af///j4B+VVuPgH5VW4+Af///j4Av//+vgAVVW/+AAAAH/0AfAAAAAB9Av//kH0C///a/qVVv4//+AC+Bv74AvgAuLgH4AH0uAfgAfS4AvQC8Pr//+Lh9///99LhVb5X5uAAPgb/0AAuAH/QAC4AL+QAPgC/+AB9Avl+qv0H5BX/+AeAAL+QAAeAAAAAC8ABVQAPgB//5W/VL//7//9vVvr//64B8H4fbgHwfR9uAfC8H24B8fguLgHy9D4uAfL0fS4B8v24LgHwf/guAfAf9C4B8Bv9LgHwb79uAvL+H6+r+/QFb//7kAAGqpBVVVquAf////8B///+qQBVW9QACqqv+qqv/////+Vb///lUW/r6/lL/kfRv9/kC4Ab5VVvlVWb/////+//////4Vv1VvlAH+QH4AAf/q+QAAW//5AFVr//+kv//5a/2/6lABvQAAAHhkBVVVubgv/////T/////+PlVVvW4+qqq9BT////0pPq/qvX0+X5R9vD///664P///r/Q+vl9f4H29L1/gfv6+H9p9b/0fn30L/r/fvBv////5v5/2/vr5L5H+puAuAL0G////4Af////wAqqqv+AAAAC/kAAABv0AAAAf5AAAAH9AAAAAfgAAaqq/qqn//////7/////+AAAH4AAAAAPgAAAAAuAAAAAC4AAAAAPgAABQC+AAAf6/0AAAv/+AAABr+QAAAABpAAAAAH4AABqqv6qpf/////9/qqqqv30AABV+fQAAPX4UAAB+GWqqqr+p//////+qqqr/6gBkAH4AALkAfgAAvkB+AAAvgH4AAAvAfgAAAUB+AAAAqr4AAAD//QAAAG/4AAAAeAAAAAB9AAAaqr6qqH/////+fqqqqr59AAAALn1qqqpuFL///1kAaqqqAAAAAAAAKqqqqql//////hqqv6qpAFAuBAAB9C4uQAf0Li/QG9AuC/R/gW4B+f0L/gB9pAv9ABgAALgAABVVvVVQv/////3//////vlVVVV+9VVVVS7/////va/////oD5VVW8APqqqrwA/////AD+qqqkAPlVVVAA/////gD/////APlVVW8A+AAALwD+qqq/AL////8Ab///+QAAB8AAAAAL0AAG/////5v/////6+qqqqvrgAAAAuuVVVVX67/////Wb///+UAVV+VAAC0H0AAAfQfqqkB9B///gL4H+qpA/0fgAAH/19AAAvb/4AAH4b/6qq/AG///+0ABaqqgAAfQAABVV+VVC//////v///////VVVVX74AAAALr6qqqq9L/////gaqv6qpAAAvAAAAAC8AAAKqv6qoB/////0C////+AAAL1+AAAAuC9AAAC4H4BVVf1blb/////+v/////4AAGgAABVVvVVUv/////2//////r1VVaV+uLkB9D64v5H0LRQb9fQUGpG19AAf+RLwAAb/guAAAG+H4ABqq+vqqf//////qqq/qqkAAb6UAABb+f+QWv+Qr/m/6QAFvqlAAAAaAAC4AAAFVb1VUH/////+v/////+9WlVVf7hv6ql+ab///n0b/lb+FH+vlvgAeQv/0AAUVv/lQK//6//6//5Ba/+v+qqq6Qv////gC////+ALlVVW4AuVVVbgC////+AH////0AAAuAAAFVX9VVC/////+f/////9+VVVVX32///9ffb///54oWv5VBABv/gBpGv6/Vv0v5b//5Blb+/+AAb+X64Ab+W/n0D+Vv/bgGRv19vQFv5H0vS/5VvR/fpL/4B/UAf+QBkAAL0AABqq/qqkf/////2+qqqq/rgFAFAuuB4A+X1lvgC/+Bv5aW/5L5b/lv4pW//5aQW/kf+Qa/kAb/m//qq//r/////+G+VVW9QHwAAH0AfAAAfQB9VVW9AH////0Af///+AAAB4AAAAAL0AAGqq/6qp///////6qqqqr/r///+vtaqqqlkGqqqqkAvqqqvQC5VVVuAL////0AaqqqqQG////+Qv////+C5VvlW4L/////gvqv+q+C9VvlW4L/////gf////5AAAZAAAAAG5AAB/////+b/////+vW5W+b2+v6r6vW/////oBW5W9VAb////4Aq/q/qgVW5W9VS//////Vb+pv5UAvqlvgAb5v+vkL+Ab9f9+RQVQb5Qv/qUFQC///0AABVavQAApAAApAC0AAH0FflQAfS///qr/m//////ALgaqvkAuAAB9Kr+qkH0////0fRqqqfh9AC0AvH0BblB9fR//+D59G//4Ln0AbkAZfQAuAAB9AC6pAH0a//5pvT/+pH/9KlQAb/gALQC1VRQ9Av//bj0b//9ffX+Vfgu+/4C9C/2n0vgH/QH/4AG9Fv9UAD2/+H0APbpAfQB9qqq+QP7////C/a/qv4f9C4B9G/0LwH0vfQfQfT59AtB9FD0Aab0APQB//QApAC/4AFVVABkH//+ALgv//8AuC5VX1X5L6qvv/8v//9//i+qqQW4LlVUULguv/20uC5qqXi4L6qqvbgv//+9uC5b6S64LmbqLrg+tuteuH6224S4febXgLi669Kq+LVv0G/0UAqAGqAAeAAZAAW9VX5Uv/////6//////gVX59VQC////+Afr+vq9B9fQur0H24BqvQfvlWq9B/////0H1VVVvQf////9Aqqqq/Qaqqqr+n//////1b5VV+VALgBW4AAfQf/gAAZBv9AAAAuAAAAAH4AAAFAfgpAB9B+D4AH0H4L0AvQfgfQC8B+B+APgH4C8B+AfgL0H4B+AfgvQH4B+C9AfgC9fgB+AH2+AH4Afr0AfgA/+AB+AC+kAH4AHgB+vgAAAH/9AAAAG/gAAAAAZAAAAAC4AAABkLgoAALguH4AB9C4L0AL0LgfgAuAuAvgH0C4A/QuALgC+H0AuAf9+AC4B/70ALgL7gAAuB+AAAC4b0AAAGW+AAAAFvgAAAFv5AAWr/+AAH//5AAAf+lAAAAC0AAAAAflVVVUC/////4f/////i+VflV9fgA+AL29AD4AuPgkPhlQULg+L0AA+D4fgAH0PgvQB+A+B+AL0D4B9C+APgC4vgA+AH39AD4AP6QAPgAvACq+AAUAf/0AAAAr+AAAFAApAAB9AD4AGn+APgBvH+A+Ab0G9D4G9Cv6v6/5v/////++qqqqv7wFVVQvvG///i+8f///L7y9VW8vvL0ALy+8vQAvL7y9AC8vvH+q/y+8f//+L7wVVVlvvAAAC/+4AAAG+Qf////0C/////QLlVVW9AuAAAD0C4AAAPQLqqqq9Av////0C/qr+qQLgQH0AAtGgLgAD0fkfQAfQv0vQB8Af1/QLgAfR/l9UAUB/r2+kABu+L/6QASgGv/kAAAAW/0AAAABvQAf////9C/////4L1VVVfgvVVVV+C/////4L6q+qqQuar6ltC5////0Llq+v9Avlb6/lS//////L6r/qqouG/+qkC6////wP/9VVvR+r6qr9H0v///0uC+qqvT4L///9LQaqqqgAAApAAAAAH4AAFQAfgAFuAB+AB+8AH4AL7wAfgAvvAB+AC+8AH4AL7wAfgAvvAB+AC+8AH4AL7wAfgAvvAB+AC+8AH4AL7wAfgAvvAB+AC+8AH4AL76qv6q/v/////9v////+gAFVWqQBv///9AH///qgAfVVAAAB4AAAAAH6qqqqQf////+B9VVvlQHgAB8AAuAAHwAb+qq/qr//////2qqvqqpBQA9AGQPQD0AuB9APQC4H0A9ALgflX5V+A/////4C/////QUACkAGS4APQAuLlV+VX4v/////hqqqqqpFVVBVVR//9f//r6r6+q+vQfr0C6+q+vqvr//6//+vVfr1W69V+vVbr//6//+vqvr6r68A+uALrgD74Au+Gv/Sr70v/4f/aBZbQakCkAAABkLgB9ALw+AH0AvD4AfQC8PgB9ALw+AH0AvD4AfQC8PgB9ALw+AH0AvH4AfQC8fgB9ALx9AH0AvH0AfQC8vQB9ALy8AH0AvfgAfQC9+AB9AL70AGkAv+AAAAC9kAAAAH3/////4f/////0qqv6qqAAAfQAAAAB9AAAAAH0AAAAAfQAAAAB9AAAAAH0AAAAAfQAAAAB9AAAAAH0AAAAAfQAAAAB9AAAAAH0AAAAAfQAAAAB9AACqqv6qqf/////+//////4AAHgAAAAAvQAAr/////q//////2qqvqqpAAB+AAAaqv+qpC/////8L6q+qv0vQH0AvS9AfQC9L0B9AL0vQH0AvS9AfQC9L0B9AL0vQH0VvS9AfX/9LwB9f/gZAH0FUAAAaQAAAKRVVVQB9v///qH2///+9fQBuQD19AC4APX0qv6o9fX///319fm9vfX19Lh99fX0uH319fS4ffX19Lh99fX0uH328fS4ffbh9Lh9V+H0uv0b0eC6+G9AQLlUvgAAuABkAABkAAAAAAaABqpRb4AH///+QAFb//lAGq/+v+B//vQb9CpV9AFkqqv+qqr//////lVvr1VVAH4uAAAC/7/qpBv////4f+VvVvj/0C4AuGfQLgC4A9AuAbgD0C5v+ALQLi/kAUAeBUAAAGgAAAAAvQAAaqr/qqm//////VW+Vb5UAH4AvQBav6r+pf/////+/qq+qr74AH0APvmqvqq9a////+QL6r6r0AvQfQfQC9B9B9AL0H1X0AvQfv/QB4B9roAAAH0AAAAAKAAABkAAVWQLQq//+AtC///0v/m59eD//Xn24Ot+///962////7rbV//kOttvvvk62/0tv7rb+X5v+tu///56236+vTrbfX0tOu9///06/n///RblfX0tAtA+vr0C0C///QGQBVVUABkAAAAAfgAAAAC+qqqqQf////+C+qv6qkvQA+AAL4AD4AAuaqvqqQC/////QL6r6qkAuAPgAAC4A+AAALgD4AAV+VflVW//////7/////+AAAfgAAAAA+AAAAAD4AAAAALQAAAAHgAAAAAuAAAKqr+qqR/////+BqqvqqkAAC9AAC/////+v/////+Vb5VvlUAfQC8ABq/qv6kP/////gaqr6qpAAAvQAAqqr+qqn//////mqqvqqoAAB8AAAAAHwAAAAAeAAAABQpBQBkfX0fRfi4fi4f+fh+fi/59H69b/rmvrn//9v/9v///7//////f/+v+b5+b2/4uX4uL/n5fn5v+v++uu/76/76//////////v//v/5Qb5Af/lVvlVv//////+//////wAALQAAAAB+QAAb/////i//////L6qqqqkvAAaAAC4AC8AALgALwAAuAAvQAC5qv/qpLr////0uaqvqpC4AC8AALgALwAB9AAvAAH0AC8AAvVVb1VS6//////n////+pFVVVVQAACkAAAAAfgAABVW/lVUv/////i/////+LhUAZAAuLQC0AC4tALhpLi5Uuf0uL/2/+C4v6b+QLi4AvgAuLQC4AD4tALgUfi0AuC59LRW4Lr0uvrguvC/5vr74L5C/+fQVABqUAAAtAAABVW9VUAv////9H/////4flV5VVB9ALwAAH0AvqqkfQC///h9AL6qpH0AvAAAfQC9AAB9v///0H3////gfflVVuC59AAC4Ln0AALh9fQAAuH1+VVW4uH////i4L///9AAAHgAABVVvVVQv/////i/////+LlVuVVAuav/qkC6////QLhVuV+AuVW5X5S/////+L6q/q/kuFW5X4C1////gPX///9B9Bb/VAH0B+/QAuBvlvkD5v5Av5Pv+AAb+pqQAAGkAAC4AAAVVb1VUH/////4v/////i5pLRpALn19C4Aufb1X1C6////+Lmr6qqouAuQAAC4C+qqgLgf///QuC/lb4C0vvQvQfX0vb0B9+Bv+AH7kG/0AuVr/v+m0f+ka/1AqQABqAAAoAAAFVX5VVC/////+P6/qv6k9V9V+UD+v+v+pP/////k9Vvr1UH3////wfWr6+vR+qvr6+X/////+fVX69fR5////9Lmv+/+guBv1/0D4b/X70Pb59eL45+Dx4H1BQGCQGAAAA4AAaqFX1UC/6///4BvWq+rgC5Vb5vUeL////n5aq+r5v+VX1uBv9///4BH2q+qQdeVb1VB55///9H7mq+qgL9Vb1VQf3///+A/qq+qkH/lH0ABuv+vqqL0a///9tABaqqgL////0B/////QH1VVVuAfVVVX4B/////lH6qqqp8fQAAAHh+qqqq+H/////kGvqq+kAB9AH0Aar6qvqn//////mq+qr6pALgAfQAB9AB9AAfgAH0Ab9AAfQC+QAB8AFQAACgAAABpAAAVVX5VVH/////+b/////oAfgBkAAG4AH4ABuQAL4AL+qq/4Av////0AVlVabgALgB9JFVvVb5V//////+v////+gB9AH0AALwAfQAG9AB9ABvgAH0Af0AAfQApAABoAGqqqkAav///gC9v//+ALwAAC4AvAAALgC8qqq+AL3///4AvflVVAC99AAAAL31VVQAvv///gC9////ALxVVW8AvAAALwC8AAAuALwAAC4AvFAAfgC+/6v9AL3///QAvFaqUAB4AaAAaAAB9AC8ABX5VflBv/////X/////+FVVuVX4AAG4Abhv////+L/////0vVW5VVC4ALgAAL6q/qqkv/////gVb/lVuABv+AC4Av24ALgb5LhVuf+QuL/6+QC4b+VQALQFQv/W//+D/9f//9Gr19VX0ALX0AfQV9f//9L/1v//gv/QV9UC+kar6pLgH///4+Afq+vj/59H0uP/70fS4Vfv7+vgA+///+AD1Vvr0APQB9fQB9AH1uKr2q//9/+f//75vkqVULgCkAAAAAPWqqqml9v///vX1qqq+9fQAAD719AAAPvX0AAA+9fQAAD719BVVfvX1///+9fX///719BVVfvX0AAA+9fQAAD729AAAPqbgAAA+C9AAAD4vhqqqvr5L///+uQaqqql///4AuL///gb4b/v5G/QH0+G/kAfS5/5AB9Ln5BAH0uFAeFvn5QH9///+C/T///9v0Fvr6v9AB8Ln+QALwubgGQuC4AB+D4LgAf4fQuAH+C9C4G/gfgLi/0B9Auv5AHgC19AAH//+AGQvqr4B+C5Vbhv0L//+v5AuVW/9AC///mQABr+lABhqv6pAvb///4b5aqqqX+Qaqqm/gB///v0AHlVupAQf//0AHhq/qQC+Ci4tBvkuLi4f4H1uH7+Auv4K+QBhqQCkAABQApAAAuAH5AAL0AL4AC+L///5vgv///24VVb1VAHgAuAAAuAC4AAL0ALgAC+FVvVUv4v///z/hqv6qGuAAuAAC4AC4AALgALgAAuAAuAAC4AC5AALm////guf///+C0FVVVQB4AuAAALlW9VAC+////Qfm///9H4FW9X0eW////8R/////wflW9X5C9qv6vQvn///9L+FW9VQ/5qv6qRbn///+AuGr+qUC5qv6qULv////guar+qpC4ALgAALgAuAAAZABkAAAdAB4AAH4AHgAB+Wq/qof0f///29Bqr6qFRQAeAAAeVW5VQH6////hvb///+b4FW5VC/QdHlQG9C4f/5C0LR//0LR9HlVAtH0eAAC0v24AALX//kAAuvb/6pC70G//8LaAAWqQGRVVVQB9v///gLm+qq/C9Pqqq8fg////x4D5VVvAGb6qr8B9v///gLgVVVUB9qqqqqf2////6/RVVW5L9qqqv6C3////4LVvVX5QtB+ALQC0C9AtALQC5r0AtABf/QCkAAb4ABl4AAAAfrlUqpC+//7/4vv//vvn69vV9ueGR9D24Rqr6vbgf///9uC6q+r24vQH0Pbn9efp9uv25/726vbn6fbh9ufA9uH259T24fbr/fvh9v/9/+H7/pT/0faUAPUAoAAAtAAdFVVaQH6////Auv///ob19VuVC9H6r+qmRf////Au9VuVUL7hr+pB+ef//8v16+qr3/Xr1Vfb9uf//9H25///0fbn1VfR9tfqq9H31///0fvX1VvR+4fqq9H7R///wPUBqqpAJAYAZAC6S1m4AfubbblH59ttv+uX777/5mv//vfQeaqq59C5VVvn0fv//+fS9qqv98vwAAb7i/G/kL+F8v/gf4Hy5uZ/QfLh/24B9uH+fgH30f2/gffRqvvR+4AL0vCmQAtBkGgAaAAAvqq+qpH/////1+VVvlVL1VW+VQpv////gH/r6+uBu9fX24L2////i/GqqqpP9qqqqpX7////4faqrqqR8FdeCgHx659LgfLri1vR9tuBe9H32+q64fuH//XgpkGqkEAAB9AAAAGX0AAAAufgFACi4vAuAfbi9C4B9uH4L0Li4PgfQuLgvB+C4uC9D4Li4H0LwuLgfgvX0uAuB9fS4BVX59LgAffr0uAB9vvC4AH2/4L0AvH/gvlb4KYB///QAAB//kAAAAfQAABVW+VVAv////+C/////4LlV9VbguAH0AuC4AfQC4L6q+qvgv////+BqqvqqgAAR9AAAJHW4AQB4uH0LgLi4LgfQuLgfV+H0uAq68fS4ALn24L1W+Lvgf//0epAv/5AUApAAAAAH4BaqUq/6b//j//+v/+G/r5lX4H4fXgfR/S9fn4H/vgv/QG/9B/4AH/+v/lG/r/+v9/4G+Qf65GVkAWQpuHgHgH24fQfQvbgtZ+C4uBm64fS+Vvn24H//9LWQL/+QEAB5VVAAAf//9AAG///0AB/QB+AAf5Vb5UL/////0uqqqqvQRVVVV9Av////0C/////QBVVVV9Cqqqqv0L/////QFVVlVkB4tLgH0Li4fRvh+LgtPvb0uVm9u+C///h70CqqoBQLQFHQAA9B4uAAD0Li4AAfQub1Ua+n///67/v///rvv5blUu+/QuAC71UC4ALvQVblQt9H///0H0f///QPQVb1UA9AAuAAD0AC4AAPQALgAA9FVvVQD1////gPW///9ApBVVVQAAHgAAAVVvVVQH/////Qv////+C9VVVX4L6qqqvgv////+C9VVVX4L/////gvqqqq+C9VVVX4L/////gaqq6qpAkZGgCQHi4fQfQuLguauX0uB59+vS9Wb2/4H//+H6AL/+gFBkABoAAHgVb1VQfH////B8Kq+qlr1qr6qbvr///9u+lW9VW73////rvaqqqq+8aqqqSnx///+AfH5VW4B8f///gHx+qq+AfH1VW4B8f///gHx+qquAfHgBm4B8eAL/gHh4Ab5AaAAtAAB4VX9VQHn////gef///+a+kVVQC77qqqoLuf///0u5/qqvT7h9AA9PuH5Vb0q4f///QHgqv6pAeAYuaAB4H159AHguHm9AeL0eH4B5+B4L0H7mvgLgfpf+AZBkAagAAAAAuAtBVVW9X4v/////6//////xVVV+VaH//24aAv6/n24C5V+P/VL//0v58aqqW/XxVqu//uv//62/6/+pUB+RZZH0BkC68PgLQfrwuavS9vAm5+fi9Vvi99H//9GiQL/+QAB4GqqqQHgv//+AeC+qr4V+vlVbi77///+Pvv+qr4+6/lVbj7n///+PuH+qr494LlVbhXgv//+AeC+qr4B5blVbkH7////wfv////B5W9W9QHgv0L9Afb5AH+B++AAG8CmQAACgABvkAAAAf/5AAAb5b+QAb+VX/kb/////7+aqVVb2//4FC1H6r19fQflvX19B//9fX0H1b19fQf//X19B9W9KX0HwvkC/QJH24G4B4uH1X0Li4Lrrh9L1a+frgf//0vtAv/6B4AALkAAAVVvlVQH/////gb////6ABuQL0Aar+q/qm//////hWqqqqUB////+AL6qqr4AvqqqvgC+qqq+ALlVVb4Av////gCml9VZAffX4G5C59Hm/5fX+qvn64L//9H2QGqpQFAAAB4HQaqqr6+C/////+L6qq+q4vqqr0WS////WgL1VVuuAuVVV/0C6//3+ZPrqvb159uV9/rr2////+uG/+9v0VGVRQaB8ffQCkLy9uGvh+L19uvb0vWr5/+B///R+kG//4CQKAAaAAB5qr+qkHn////weWq+qlZ+ar+qS7+///+Lv/1VW4u+/6qvi7h+qq+LuH1VW4t4f///hXh+VVuAeH///4B4flVbgH2+qq/gf/////B9r+q/kHm/gH+Qf/kAG/AqkAABkGQVVVVAuf///+C5////4LguVW9Kvi///0+/blVvT7+v//9Ouq5Vb066/6q/7rr////uuaqVb0W6/+v/0Lr/6//guZfaS9C6/5+bgLm/m/9AuH/i/gC6+av/kL/gv5vgZUB5AaBVVQKAAf/+B4AAqr4L/+FVbl//6////1eW+W+/R4H6r7+HgfqvZ9tB9V9C/wH//0H9AfVfkf0G+v/n/4v+r6+b5VBbbgKgZefUCkC64uBbgfbgotfS4uVW4vfS///R8kG//4BQAAtB5AAAH4H9AAAPgL4AAF+Vb6q///////////6mql/VQAAAC9AUAAAL0L0AAAfR/AAAB+f0AAAC/+AAAAL/gJAAAv5B8AAb/QHwAb/+QfBv/m+S9v/kC//r+kAC/9aQAABvgAABkAQAAALgLgBVVvVvgf/////S//////L1VvVW8uAB9AVS4AH0HgLgAPh+AuAAuL0C4AB++ALgAH/gAuAAL9BS4AB/gffQAf/S99AL++L70G/S+++C/kG/70LkAG/VAUAAC4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BkAAAFQLhqqr/QuL///5C9f76aRv5uLguL/64eH4G+b6+vkLn////gvf6qr+C/9AAG4b/6qqvn/v///9v8W+q+RrgL0L0AuAfl+AC4Af/kALgBv+QG+Wv//pv6/+W/5uX5QAaQeAC1oAB4ALn0AHgFufVK/m/5/+//v/n/+v5W+flQuAC59AB4Gvn5UH2/+f/wv//5//b/lbn5X/0AufQK+AC59AB4qvn+oHm/+f/weGr5+qB4ALn0BrgAufQL+AC59AbkALnwAKQKAAAAtB9BvgC0v+b/Qfn69t9H//n320b+/vfbkLX/94vgtfr2hpC19fVVQL//+//B///2r9v59fZHy/X594eFtf/220C16/X/QLbn9L4AtuH0vgb71fb/m/vf/9fhV4avQaBkVVVVQLX////Qtv///9H5blVuS/9v//4L/25VbgH0L6q+ALQuqq4Aur+qv+C/////5v1VVVpP9aqaqov2/+//0bWb2VuAtuueX0C1/4uvALR/1/0F9fqb/k/75L+v5uaAvQfgeALQZAB4FuW5QHi////gub///9f/VuW5R/+r+v9BuX///4B4fVVbgHl///+Af76qr4G/vqqri/1v//+L+BVvlUB4qq+qkHn////geGr/6pB4Av/kBrhr5f5L+f+Ab+Km+QAL4GQAB4AAtAALloC0v///0bn////r//VX1e//+qvSRfr//+eAtfVW60C65qr/QL/r/v5R/+te/fv7667+//vb///guoVqn9C1m30fgLbvbl9Auu9K64X735br2/ub/+Lmpkb+kZAeAAtAAW9RS0AC/+efqpK/m5//4C4vX7/hbn5uC4v///4LS////w9AG9C/X0Gv6f9eAv/+q64H9fgH/QuS9Uf9AVb/0vgG//6C+Av++Av9BVH0b69AqvW+G9D/9/gH4GqSkAGQVVQGQAL//guAAv/+C5VAVX4P/+aqvq//7////1ua+r++C4H1bn4Lgf/+vguB////C0H1b/9PQfq/m58B//4H7gH1bgL9AfRvgf0B+//C+Av//0v+C6Vub6+QAB/+B+AAHvQBkAAH0AAAAAfgAAAAAuAABqqr+qqr//////avqqr+kA+AAPgAC9AB9AAH4AL0AAL0B+AAAfgL0AAAvR+AAAB/b0AAAB/9AAAAH/kAAABv/kAAFv+v5AW/+Qb/m/6QAG/rpAAABqACQAC0AAfkALgAB/4AuAAAv5C4AAAb9LgAAAb4uACkAHi4Af5AALgAf+AAuAAb+QC4AAG/QLgAAC9AuAAABQD4AABVWv7mr/////////r6WqlVQPgAAAAAuAAAAAC4AAAAALQAAbguQAAb+D/pBv/kG/+b+/lvq+ZRv/4BUAG//kABr/6/+pv/lBb/+qlAVaqQb///+AC///6oALlVVVAAv////9C/////4fVVflVB9AB9AALgAH0AB9AAfQAHwAA9AAZAACgAALgAABVF+VGq/9//9v//i//2+VUC5ULgAALlAuAAB9tC5VVH24L//+vbgv//7//25blP//rguAVbltC4AAuD0LgAC6vQuAav/8C4D//vgLgKr59AuAALrwC4AAu9ALgAC2gAtAAAC4AAAAAL4AABVVf1VVv/////+//////hV+VVVUAC4AAAAAP1VVUAA////gAH////AAfQAC8AB9AALwALwAAuAB+AAC4AL0AALgB+AAAuAL0AQH4C+Af//QvgB//4C4ABWpAAeAKAAAB9C+qqlW5f//////+qr5v/muVfQfQf///h9Vv6r6H/0uVfQf/S//9B5tLqr0Hi0uqvQeLS//9C4tLlX0LS6+qvk9P////3x+r6vpuHwvAuT6+b4B+af79AB+AEaQABkf////+C/////8Gqq+qqQAAH0AAAAAvAAAAAC4AAAVVblVVL/////+v/////4VVvvlVAAC+9AAAALn0AAAB9fQAAAfh9AJAG9H0B8B/QfQLwv4B+Vvb9AH//6+QAL/+WQAAFpQr/4Gqqn//0///v6/T+q/+B9PgC/4H0+AL/gfT+q//q9P/////0////6/T4B/+C9PgD/4L0+Vf/gvX///+C9f/////29Vf///fgA/VVW+AD8ABvgAPwBv4Bq+Af+AL/0B+QAapAAAAuAAqpAC4AD/9av6pPv3///49ff7+vj199LguPX30uC49ffS4Lj/99LguP/75+X5+v/////1/////vX1V/VV9fAH+AD18Av+APXwL6+A+/W+W+T/+/kC/Wqv4AC/ABpAAC4AAGgAABVVvVVQf/////1qq///+QVW9VVQH/////Qar+qqpFVb5VVU//////6q/6q/qQC9AC9AAv6qv9Ab////+L/1VV/+u/qqr5pS////QAL1VW9AAvVVX0AC////QAGqqqoAaqWqqqm//v///r/9v/7/vb0G9C+4fQfgL7h9C9AuuH0vgC69vb5avr///S/9v//kGqS+vaqqpLh9v//9uH3///64fflVfrh99AA+uH30AD6+/fgAPr/9/qq+aqS///4AAH//+Qv////0H/////QflVVV9B/////0H6qqqvQP////9Aaqvqqkqqr/qqr//////1VVVVVVBqqqqpAL////4AuVVVbgC////+AG////0AGgfRpAB/R9L9Bv6r0b+f5L/QG++AakABkAAAHQAGqRVvVQ//v///n6+///+fX1uVvQ9fC4C4D19L0bgPX7///+9f////7/9VVVVP/1qqqg+vf///T19+qq9PX34AH09ff6qvT19///9PX35VX0//flVfS/5///9BVC///kAeAALQAV9QV+VL//m//5v/+b//gW9UV+VKv/mr/+///f//5X/kW/lAf/Qf/gH5+b5vm+R6+Rvv+r/+quW////+QLqqqr4AuVVVfgC////+AL6qqr4AuVVVfgC////+AH////0Av////+D/////8P5VVVvw+AAAAvD4AAAC8P6qqqvw//////D+qqqr8PgAAALw+AAAAvD+qqqr8P/////x/qqqq/H4AAAC8fQAAALy9AAAAvL0AABX9+AAAv/70AAC/+uAAABqkfQeAVVB+C4L/+C9PQ//9r6+n5b////vQfar6p+W8EfRD//y19tP//fX25+W99fbn0H319uflvfX25//9/vvn//y//9fQfGv6S8B8A+ALgHwL0B9AfB+Abhr8fgH9L/xpAKQapAHgAAAAVvVGqqr//+v//r//69W8AvQLgHxr+kuAff//y+r9+Vvb//36r9vVvf//24B99Bvb1b36q9v//L//m//8V/lLgHxW9V9Afv//70B+////QHwC5G4avALgfS/8AeAoGqQAAfAAAAAB9AAAAAH0AAFVVvlVVv/////5qq//qqQAC/4AAAAf/0AAAC//gAAAfvvgAAH59vQAAvX1/QAL4fR/QC+B9B/RvgH0B/f4AfQB+pAB9ABkAAH0AAAAAfQAAAAAoAAAAACgAAAAAfQAAAAB9AAAf////+C/////4BVW+VVAAAH0AABVVfVVU//////6//////hVW/9VUAAf/4AAAH//4AAB/fb4AAf19b4Ab9H0b5G+QfQL9vQB9AH9UAH0ABQAAKAAAAAB4AAAAALgAABVVvVVUv/////2/////+QVW/1VQAAf/gAAAC//QAAAf/vQAAC65+AAAvbh+AAL0uC+AC+C4C+Avmr6W+L5v//m++C//+G5QAL0ABAAAuAAAAAC4AAAAAHgAAAAALQkAAAA9H0AAAD0b0AAAfQfQaqq+q+l//////iqr/+qpAAP/0AAAC//gAAAfvvgAAG99vgAAvT0vQAL4PR/QC+A9B/RvgD0B/v4APQB/uAA9ABoQAD0AAAAAPQAAAAApAAAB4BVVQAHgL/+AAeB/r8Bv/n0HwH//vQfAFvV9B8AD9H0HwAf4fQfAC/19B8AP/30HwC///QfAf+a8B9W+4HwH3rnguAffUeC4B98B4fQH3wHm4AfvAevQB/8B64AC/QGVQABQAB5VVUAAf///0AH////QB/5Vb4Av/0G+AL9f5vkAuQb/4AAQFv/lAGq////p//6qv/6/pX4Wqh/qv6rkH/////QKur+qoAC4Pm4ABvg+f5Ab4D4b9L+VfgL+/S/+AG5kG/kAFQGQAAAAAtKqqqAC0///9AfVvlb0f/59AeB//n0C4BfkfgLgB+B/QvkL+H9D/Qv+f4G9H/6/0Hwv1brguH/Q9fX0+9HwuuCm0uB/0ALT0G+AAtfRv+QC75v6/gL/v5B/AplpABof////5C/////0L1W9VfQuVb1V9C/////0L/////QuQH0B9C+qvqr0L/////Qaqv6qoFVVvVVU//////6//////QAb/+QAAG//+AAC/r2+QBv0fC/kv5B8B/75AHwBvlAAeAAZAtAVVVQH0L///gfR///+F+X1VVS//fQAKL/99pB9G9X34LgL0fX59A/19L/wH/70f9Av//QfwH/q9C/Qv9H0v/T70fb5uOfR++B9B9H6gBQH0fVAAAfR///+B9C///4CkBVVVAGQAGQAAuAB/QAC4AL+QBbkC++Qb/4vR+Qv/r4B/Qbm+QG/Auf///4H+b//9Av+fVX0D/+8AfQf67wB9H/hfBr0vuB8f+S24HwamhLgfAAeAuB9AG4C4H///QLgG//4AeABVUAB4AC4AALgALgAAuAAuAB//qr+qb/////+VvVq+qkC9AC4AAf4ALgAC/1q/qQf/v//+C///qr4f+b0ALi+4fQAuPrg9AC4ouD0ALgC4PQAuALg+VW4AuD///gC4L//9AGQFVVAH////+Af////4AW/Vb+QAH/W/gAAG//0AH/////5v/////4Vb+9V/QG/bgb0G/q+b9B/4f5+QL5VvmlU//////+//////gVX/9VQAG//+QAG/76/pG/5fS/+/5A9Ab9kAC0AFQGQAKAAAuAB9AAC5qv+qgfr////v/9aWpW//gpLgBf0H0fQB/QuAuAL/X0B9Av+/gL4H+//R/0v5/+L/7/n29+e++FH/0Cm4AL+AALgBv5AAuBv/+QC4v+b/gLn+QG/AtGQABoDgFVVUAfC///4B8P///0H1+VVfb/7///9v/////0b1+VVfQvT///9H+b///gf+pV9WS//0H1uf+/6vr3/x/+/9PvH1X+QV8fQfgoHx9V9HwfH771fB8f+f/8HwqQv+QKAAAVQAAB4AAAVVblVUH/////4b/////gAb//5AAG+ub+QG/i4H/l/4Lga/in0eD0ZFfVVfQC//5///r//n//+B/UB/5QH+kL/gB/71//gL/b/vvS99b59vfX1+H0uUPRQfQkAoAAoAAKQAKAAAtFW+VQC2////hfr///+f/1V9VBv+b//4Afh///0C/X1VfQL+v//9B/////0L+/1VfR/1v//9L/R/qv0u9H1VfQS0f//9ALR+qr0AtL1VfQC7////gLr///+ApFVVVQBQAGQAAeGq/qpB4v///4b1b5blb/4PQuAb+q/r+kLl////Qvr1ZV9D/uC4C0f/5b5bS/////+P5q+qqm/gH5VUPuAf//4p4C+qvgHgfQAuAeC4AC4B4vaqvQHr0v/9AZtAWqQAVVUaFAf//699B///r29BVVUfS0VVVW9VL/////+//////5aW+W+VQZLwH0AD4vVfQAPi/+9AA+L/64AD4vVLhkPi8AvLw+LwV9vD4vr368f7//b/r//6Uf+/6VAAv1lAAABtAAACwAAr/4fVVS//2///1+Vv//+D0H5VVAfqvqqkB//v//wL74ar+AuLgBvQH5tBv0Av71v//n//b///qb4G9+uAfgvX24C9b1uLgfi9bguH9KW9D1vQG/Rfb0Avkv4tABkC/T//r//8P/+v//0b5W0AbQfQLqq9B/ov//0H/xVVVAuvaqqpC1+///4fXr6qri+uuBgeP/64PR4+/nh9HhR9eH0eALh4fB4B9Hi5XgLwFvvkC9AL5/kvgH+Bv34B/gAvqQH0AAef/6///S//r//9BuVFVvQC4AAL0AL6AB9AA/9ubqpH77+u/0eLu65vS4u2rVtf33au/i/+dq6+Lr52rX4UfX+tfkB9f66/gLgVrvaB9AH/0ALgAKlAC9GquqqfQv///8oAVVVVQAALQAAKqq+qqhv/////RVVvlVUH/////Qaqr6qpL/////+qqqqqqoBqqqqkAP////QB+W+W+Br6r6r+b//////W9W+W+kL1b5X5Av////+Bqqqr/oAAAFb0AAAB/+AAAAC/kC/////4P/////w+VVVVvT4AAAB9PlVVVb0//////D+qv6qkPgAvQAA+QC9AAD//////v/////++VVvlVX0AB+AAPQAC9AZ9AAH5C70Aab5Lvlr+L6+///kL/7/6QAL/WlAAAGkAeAAAAAC9VVVVAf////+H/////1vlVVVUL6////wuGqqqqBqqqqpAH////+Aaqqqr4AAAAALgAAAAAuAAAAAC4AAAAALygAAAAvfAAAAB98AAAAH7wAAAAf+AAAAAv0AAAAAuAAALQAAAAAuAAAAAC4AAAAALgBoaqpuAb1//29C+BVvb4vgAB9v75AALm/+QAA+L/QAAH0u+AAAvS69AAH4Ln9AB/QuH5AL0C4L5C+ALgb5vkAuAf65Gr4AbhAv/QAEAAr5AABpBVVVVH9v///9H+////0H59VVvQGX0AC9UALgALj4AuAAuL4C8AH0L4H0AuALgLgH4AEUvQvAAH0+H4AAvR++AAL4C/0AB+AH+AAf0B/+QH9Bv6/kvWv5C/2kf5ABvgB5AAAUeAqqqpC+X///4G/a/q/gC+C4B9ABkLwLwFAAvQ+A+AD+H6T+Qf8v/W/R/0W9BtH7gHwBQufQuAtD4uH0H0fR9vAfS8C/0C8fgH+Afi9Af5B9fgb/5L29b+b++fr/gH6kofkAGbkf///9v2////4vrlVVfgZuAAB+AC4VVH4QLr/+fbkZ//9Uv0H1X0AfgfQfQAZB9B9AAAH0H0ACgfQfQAfR9B9FC9HwH18LguAfXx9D4B9fLgvQH1+9L4Af//i+QA/+pLkABqRkBqqqqb4f///+f1+r6qkbX0LQAAEfQuAAEB9b5VC5H7//9L9fa/r4L59C0LgGXwLQuAZfA9C4C64H0LgfrgeAuC9uC4C4Ln4fQLh+fS8AuL19fgX0+Lm4H/S0ufQf0BCkUAEAFAAGkAB+AAvkAC+QL/kAC+C+v0AC5vgf4ABf4Af5pH/qq//9u///7n+X+q/QG4PQB9ACQ9AH0AGT0AfQAuPSm9QH09f/7QvD0v9tH4PQFT0vQ+AAfb0C+qr4+AL///SkAGqqkH0aqqqpf6////4f/////gblVVX0AZaqofQQC//19LkL6vX0vkuB9fQvm4D19AvbgPX0AUuA9fQAS4D19ALrgfX0Auvq9fQH2//19AuGqqH0H0AAAfQuAAbr9L0AB//geAABqpBoAC0tAH4Fbn5UL6////8L/////wGQLn0vEAAuPR+5Gr+/v35v////H65+vlUHri49AAFufr5VBq////8Lqv//vx+AfX0fH0C4PR8vQvQ+r34L4D/+vS+APqm4fgA9AFQUACkAAAApAAABVX5VUAv////0H/////gfVVVV+B/////4H6qqqvgfQAAB+B/////4G/////QFVW9VZG/+b0G4v/+v2/gVb2//0AB+b/5AAb0uv0AH9C4f5G/Wvgb9/kv+AL9UBvkAGSgAAuAAfkAC4AAv0VblVAbr///9AVv///kQAVblULkAAuAAvkAC4AAflVb5VQav////ARq/6qoGgC9AAAuAfgZAH4H9C9AfQvQH4C9L4AL0fh/Va/i9H////bgL/+q+pAFVABloAAHgAL5AAuAAL9qr+qkH7////QFflvW9EB9C4H25H0LgeL+fqvqgH+////QGn/6r9AEfvQL0B55+AuALni9H0B9uH5uAH20L/0AufQf+AH19G/+Qvbq/r/n1+/kG/lGmkABpLgGqqqAvh///+BvX6qr4AZfQALgAB9AAuBAH1VW4uQf///i/R///5B+H30BQBkffQHgAB99G+AJH32/0C8ff/5ALi9/5GR+Ln5AuL0+fQC5uH19APr4uH5W+/H0P//30aAb/5AAAeAAAFVW9VVR//////X/////9FVb5VVQf////+B/////4FV/lVVS//////r/////+Fb5Zb5QC+C0f5Av9Lm/5b/4uvr++Wm5kLmRv/nlEBv+uf9Av+r4b+SpH/QG+AAf5ABloBVVVVL5f///+b+////8L/1VVbwK/QAAuUB/qqr35C////L+H6qqoL9fQAAAGh9AAAAFH6qqkAef///0D5qqqvgfQAAB+C9VVVX4fv//+fW9v//p9vQAAVb34AAC/+KQAAH/0KQBVa/R+S///9C/f//qQB++VQBABn0AWuGQfSv/4vR9f/6R/n2+9BR/fb25uBp9vL/8BH28f+Qafbx+QC58vD4ALri8L0B9uLwfgH34vAvQufS9p+X29L/i+fbgf5C9keBpACWQAC4AAvQAL0AB/qq/6qhu/////AVq+qqkAAL0BkKQB9ALgvkflVvhvi////QZL////AAFVVV4GgpaHhAuH24eAD4fbi4UfR9uLny9Ly4uffh+Li5+9f0uH77i9C4f+ZLQHgql4BqqqqL5f///9b6+qqr4H7hoAfQFeLgB4EBq+qri5L////b9a+qqpL4H0YAAGQuD0AAAH0fQAApvq+qQH2///+AvWqvqkD4AB9AAfr////i5////+vRVV9VS4AAH0AGAAALQAFAAGgAC5AAfQAH9b///gH+////QGrlVV9AAuVVX0ZC////T5L6qq9H9uVVX0H6////QGb///9AUub1VpC64fgb0fbgvn+B9uAv/QLi4Fv0B9Lm5v5Lwv/Qv9+C/kAb5gGkAAFGQAaBkAvgH4L5Bvm/Qb+Av/kAH+AqkBkGkAAAv0AKQAL/4A/gG+f5Bvm/gb+Aev0AL+AG5AAG4BFqqqpAeL///0C9vqqvQPi4AB9B9LgAH0LwuAAfR+C+qq9PwL///0tAGqqpC0B5VVVL4P///+b2////4LvlVVUAG+qqqkUL////j4G6/q+L4LS9C4L09G4LgGb6v6/QC////+AG+r6vkLXwvQuA+eB+C4H15C9LguH////X0f///+uAVVavn0AAC/9FAAAG/gGQVVVVAvW///+Bvv///4BuX5W+QBkf5vkBAAb/0AuQav/ql/X////h+fq/q+Bp+W+W4AH////gJf6/q+B59C9C4Ln+v6vg+f///+H1+W+W4uH0LgLn4fQuG+vR9C5v5kHgHhuRkALQAAPkC//+Qv0f//+AfX+Vf0AZv9C+AAL2+vgLgZC/4AvgAb/kAvhb//+Qpv+qr/AC6R9GkGRqr6pAuD///0H0Gq+qAfQaH1kC4C4fb0fQvR9fi9H5X0ffgub/QutBQf4AQUC4FVVH4H1//+b4L3//8H0FFVbwFZAAAfAB5qqp+kLr//7/4uFvVfb64B9B8Grmv6XwEuf/+fBq4W9V8LrgHwHwuuAfQfH65r+q8fbr//7y9uVVVffi4ABq+9LgAH/2QeAAKpZAVVVVC+H///+G+v///9C69VVb0Bb////QAvqqr9pC5VVb3+b////W+b///4BpkApAABLgD0FQZvVfm/C2/9//0fb/n/kB9uQfkJLi4B9B9+Lmr0H30v/v6/uC/kv/50GkAqqH0BVVVAf0v//+Af7///9AvvVVX0AV/qq/RUH///9L0fVVX0f1+qqvQf3///9AaFVVVQABqqqpQKb///+B9//v74H318fXgufXx8eH49fHx4vX29fbm+/////vr////+pFVVVVQUAYAZAH0C0C4AL1flf6kf/////ga///qpAB9C9ABkH0L6pL0f+b/4bh/9a/QeX70H4AUufQvQBS19W9QfbX7//h59fv/+Lrh5V+U+uLgC4H71uAPguvv1q9D66+H/gKFBQGpAaAaqqql+X////y+vqqq/C/4AAC8Bb6qqvlAH///5uQfVVfS/R+qq9B+H///0BkfVVbQAB+qq9AaC///0B9BX5VALlVb1VR+/////L2q+r6p+Ab0ekL0b+B/0+C/QBv2kLkAAfWQAC4AAvmqv6qkv/////gvr6q/pAUvQC+QAb5QG+WS+vSl+vqX4Pllvh/VvkAuf///gARr/+uABAfrgaQuC9fS9C4vwvvgfX/B/4C+/8B/QL/r2m+S9pf/R/rgB/kBvUAGkAAUUAkAZAL0H0C0Ab6vqflUb//+//wVX1b//ABfUtV+kv/76H/2//+9ufrffn74Zt94PvQC77h/4Bb/+H9AeX+Uv0C4f5C/gLS/5fvR9f+65+L772vS9utfH4H71R9uAL1ADhQAFEAGgAVC5FvVb/n+/////G////l8GgvQuHwAb+m4fpH//r6++fl+v/2+9W6+vC7//rh8Afq+uHwV9C6+vD7//r/8fa/5uby9W9X0fL////R9+///8H71W9fmvuAHy9v5kAeLRpWgtCqqpfm9f//4vi9qqvwZCgpAfAGlX5V9Qfv//77l9V+Vffr2r6l8fvvv77wV+6urvAH7r6u8Lvuv77wu9v/+fH70f+R8fvW//Xy59v+vvLn/20q99fpLSr7h9AYf/ZHgAAb55AqqqpH5H///0G9flVfgGh/qr+AAG///kpAWlWpT+H/5//W+vr769C65fuX0BH/+//QZaq/qoC4VW5VQPr////h9v////L0Vv/lQuAL//gH0G++vkvC/m4f20fkLgblAZApAEZAH0G0C5v////n6////+Hlb1X5QFb/2/+BB+vrq4tH1uuXi9f/7/+C9r5fVUChvq+qkFb////h/+VvVUL/+r+qgvv6r6qH4uVvVUfS////29Llb5VLgvq/qq+C////6gLlVVVAAAeAAAAAB9AAApAH0ApD4AfQH4L0B9AfQfgH0C8AuAfQfgB9C+B9AC4L8LwAHgv0uAAFD/hQAAAfvQAAAC9vQAAAfh+AAAH4C+AAB/QC+ABv0AH+Rv9AAH/b+QAAG+eQAAAG6//////r/////+VVV+VVUEAH0AFB4AfQB4L0B9ALgfgH0AuAvQfQH0B9B+AuAC4L9H4AH0v4vAAKH/1kAAAubgAAAH0fgAAB+AvgAAf0AvgAb9ABvkL+QABvm/kAAAvnkAAAAuL/////Qv////+AVVVVW4BVVVVbgL////+Aqqqqv4AAAAALgqqqqq+H/////4GqquqqQFAC4AUB9ALgG4C+B+BvQC9L+b0AC6//9AABvm/gABv4C/kGv9ABv5v6AAAv9pAAAAagLgAtAAAuAH0AAC4Av6qlLmX///5v+vqq/2/r4AH/b5vQAf9uS0AB/24BQAH/bgLgAfZuAvgB8D0BvQHwfgB/AfB/gB9B8L/QBQLx+vQAAvLx9AAH6+BkKq/fgAAv/4tAABv+AFAC4AFB9ALgB9G9AuAfgG9D4H4AG0f5uQABH//0AAG+W/kBa/lBv5v/ktAb++kD4AKhZAPgBoC9B+AbgH9H9C4AH4v4vQAHn75kAAG+b5AABvkL+QW/4AG/m/5AACv2lAAAAaAtAB4AAC0Fb1VBLR///+tta///627luVULb9H5QAuvm//kC69f//QLrgvV9AetC4D0B70fqvqXvR///+Z9Gqr6kH4AUPoAf0C0/0C/gvD70fvX0Pfn4tuV9vuQb3/1+0AZL+BQLQFVVQAtC///QC0b//+Kba+VW4tu70ALi6/bQAuLr4tAC4uvS0ALi60LQAuLrQvqv4e9C///gX0FqqoAfQBQFAB/QfB9AL+C4H4A+tvQH0Hhr4ALh+B/QAfr0L0AAvtAtAAB5VVVQAeP///mR9///+uH0X5VC4fQvqpLh9H//4uH1vqvi4fb+Q+Lh9++X0uH1R/+C0fQB/0FB9Ab9Aarxr/QB/+P/lAVvkb0tC0uAfS4Lh+C8LguC9fQvB9H64B8H0LrQHgFAZAAABkAACkFbltALS///4Atv///RS/kLr0Pb+Vu+U9v////626v//+rbQBvQAttAb6qS30L///bfX/6qkV9/vgAAH6kv/9Av4C//0C70BVfQfX0AB9C8KalfgPgB//9AoABr+QAaAFVVQB4C///QHgP//+FeZ+VW4t+30ALj7+fqq+Pv0///4++D6v6T7wfQuAPuB8B9A+4LhC5BXh9uX5AuL1+X+C59B+G4f1QB9BR/0ABQALvhqlAC9eH/+UPgUFr/gpAAAGvABoAGQAAHwAuAAFvUC4AC//2//0H/+f//gAfUX5uAC/7vS4G//v4Lm//Uvgudm8C/R6xbwvvX/f/L4oL5v4uAAbQVBQUBUB4eC0fQLh4LguB9H0uB9fgfR8D69A9HgL7QBgEAZAtGqqqQC0v//+ALS+qq8ZuvlVby6/////Lr/+qr8uvrgAHy69v6q/LrR///4u9BVVVRr0qqqqQfX///9B+VW+VQH/VX5VQu/////H1////4uBkH0AL0AAfQAtAAB9AAQAACkAAA4AC0AFX1ALgB//+v//Sv/q//9Av5BvlAH/9H/5B+9q/65vnx/rm64fHkuG1AoKC0BChB8BaAfgH0C8AvgvQvgAvS/b4AAdf+pAAAH6+QAAG/S/kAa/kBv5b/4AAr/alAAAGoCgABkAAfqkHgAC//wvqkvluH//n0C4vW5vqvn4Lh////gtBqqv/X0BVW5uuAv//h/0Bqq+C+AAAC4f9B///r/9H///+W+FVVWQK0LRkKC5B9Lg9H0LgeC4Li9B9HgfbgCgJApapb///i/+////b/2r+q9ufQfgH249b5VvLn7+S/4v/vQL+S/9VVakLn2///4uPb///i49uABuLr25VW4v/b///hv4v//9AVBRVGQC0tC0fQvS0LR+H0LQuB9uAtB4C6kBkCgGQCkABQAVflQeAD///m9QKqqr//gGqqb/+B+quV64H5W5rngGqqb+eAqqqf14G//4fXmFb6W/uu///v/67+/r5/+BW4vRv0L/n4AeAupFUBkH0tC0Lh+C4Lgfb0LgfAuuAtAoBoLQuULQAtC/4vkC6fvm/ib+9eLbevr659Y65//7/7rX7///utvb6+l67/+H4Drav0v0KtC+H7gC0f0ufgPX9L0vR9fR9B+H5tGpLkv64t9uH7/j319uK9PfT70Hw9tLqAeChkKAZAAZAAC4FW5VQLgv//+YuG///626qX9eLb+uu64uv1vm/S69C+r9Lrhv//+uuL+Vb+64b//+brgfqr0euB9VbQW4H//9Af0Kr6gC/goeZAfvX159G4euri9vQHn+C5kAEKkBQKAVVVAB4L///QHg/qq+Gfb+qr4u//qqvi7+/qq+Lv2/7/ku9FuX1S3i////reGvq+pp5v///kHmv7/6QeB9ZvgC9vh5/kP/+Xr/h/5/v+ZLnr6/+S9L+bm/fgeb+BpYAQfkAAFVVVWqS/////9L///q+QG5X0HwAH0LQuAGvq+r6m//////76vqqqvuBuAAC9//////h/////4BX5VVVAAf6qqkAH////wAv/lb+AH5vl/gB+Bv/0Aflb//pT9//q//6W6UBa+ABtApAAAL0H9AAB+QL9AAf0AL9AH9AAL9B/gAAL5v5QAFb79fQAtbqR/QH0UAC+B+AAAG9L0AAAH6+AAAAL/kAAAAf9AAAAG/5AAAG/v+QAG/4b/kG/5AH/5v5AAGv5pAAAAaQAAGQAAAaAuAAAC4C4AAAfgfgAAB/q/qqQL////+B+qv6qkfgAuAAC9AC4AAGgALgAAVVV+VVT//////v/////+VVV+VVUAAC4AAAAALgAAAAAuAAAAAC4AAAAALgAAAAAtAAAB4B4AAGX0LgAAufR+qqm59H///776v///v//656+++vbnn/n259uf9fbX21+19kufXxH/b24fBv6+fh9v+vm9H//29fgfpfaW4C8B9BvQLwH0f1V+AfX9L/0B9KQa5ACgAAAAAaAAoAAV4AH0AC7xqvqoLvL///0+9Vb5VH/9VfVUf/7///659v///7nwVVflpfVVV+QB/////gb/////b/l+V+T/8C4D0KXwH4PQAfALg9AB8AJD0AHwAqvQAeAC/9ABkAFqQFQuAAAAvX+qqql//////hv1qv6pC+AA+ABv9AD4AL70APgAubgA+AAR+ar+qQb+///+G/6r/qlvvQH4AL59APgA+H0A+ABQfQD4AAB8APgAALlV+VVq+v///3/2////K5BVVVUAEBkCQFS0LQeAvvl+W9R/5////R/W///5L8BuB9B/0G4H0L/W///6Zuv///4H5VVVVQvgVVVQH+H///R/4f6r9Prh9VW0puH///QC4f//9ALh5AG0FuH5VvR/4f//9H+QqqqgAAB4AAAAAH0AAFVVflVU//////6//////gAb5AAAAB+QBQAAvkBvQAL4Ab4AC+VX+AAf///gAAv//0QAAAf5LgAAG+QvQAB/gB+AAv4AC9AL+VVr4B/////0G/+qpvgBUAAAtB/////4L/////0b////+AAAfgAAAAB+AAAAAH4AAAAAfgAABqq+qpAf////9B/////0BVW+aVAAAH4tAAAAfj9AAAB+H4AAAH4L4AAAfgLgAAB+AZBv/////r//////b/////ov/////T/////+Gqq/qqkAAC4AAAAALgAAAAAuAAAAAC4AAAAAPgAABqq/qqQP////+Av////0AAB+QAAAAC4AAAAALgAAAAAuAAAAAC4AAAAALgAAaqq/qqm//////7//////v/mqqqm//v///mvlq/6pB8AB9AAHwALgAAfAB+AAC9AL+QB/+B//QL/9L/+AG9R/69AHwfrm4AfG9eH0B9vR4LkH2kHgfgf5AeAuC/wB4Blv5AHgAP5AAeAApAAB4AAAAAGQAAAAUKAAFVC19AC/+fX0AL/6//6kG9f///gHh+b5VAeLgfQAF9aW9VR//////m/6v//+B9AL/gAHgB/+AAeAL/9AB+h++8AH/fn34C/69fb0v5vR9L1pL0H0fgAZAfQZAAAA8ABqpf//+L/+///9v/r1+X0b0eD0fQfB+vq9B8H///0H0fr+/W/l4fR9v/ng9H1v+fr6vQfR///8B8Bq+qQHwAH0AAfRqv6pB+n///0H/ar6pG/4APQA/5VW+qm5C////xAL////AAAC0ABqpAfgAL/+r/qqa+f///8Hwa+qqQfALgKQB8C9AuAb0flW+L/6///9b+b//74HwFVRHgfAopaEB8H214AH6fbXxQf+9tfab+bi19++R9LX36QfwtfvAC9C1/4AHQGBqG//2//9f//v//4V+UVuVCr6mr+kL//b//gW+UVuVH//7//+v/////4VW+v1VAFvgv5AG//pv+S/5v/b/rpBq5GuGqqqqpQf////0Aaqqr/QAAAFv0AAVa/5AAL//pAAAv+kAAAAAAKQAFVVV+VU//////6vq///+h8FfW5kHx5v+bgfHm/5uB9euX64v/+6v/i/////9B9VW9VQHx////gfL////R8ubm59H759bn0f/r//vb++qqu9+S4AGr1QLgAf/QAZAAakAFAZAAAB4C4AAALwLgAAAuAuAAAH6q+qpAv////9H/////kvQC4AAH4ALgAAvQAuAACkAG5AAAf////0C/////gBVa+VUAAALgAAAAAuAAAAAC4AABVVb1VVv/////6//////n/////+v/////++qr6qv7wAfgAvvAB+AC+9Vb5Vb7//////v/////+9VX5Vf7wAfgAvvAB+AC++Vb5Vf7//////f/////4VVX5VVAAAfgAAAAB+AAAAAH4AAAAAfQAAAAAtAAAAALQAABVV+VVAv////+C/////9LlV+Vb0uAD0AfS4APQB9L6q/qr0v/////S+qvqq9LgA9AH0uAD0AfS+qv6q9L/////wGqr6qpQAAPQAHgAA9AAuAAD5Vb4AAL//+QAAG//kH/////Qv////9C9Vvlb0L6q+qvQv////9C+qvqr0L1W+VfQv////9Bv////kWqqqqqX//////6/r+qqqC4L0AeALgf0L4AuAf6+QC4Af/gALhqb+QAvv4H/kC/+QG/4HpQABbQAACkAAAAAfgABhqq/qqvb/////uur6qqm64fQAAHri///5Fuf///0C6+b5VAfrQfQAv+ZW9VX/6////1fr///+B9AH/QALwAv+AAuAH6+AL0G+S+B+G/kC+f0v4AC/pC5AABoAAB4AAABVb1VVpv/////7/////r/XkAAAf9fVGqgv2/+v/hfb/66+B++9LS4H7ngtLr/uvW0u/+//7S5X2/+tLgfAvS0uC4D+LS4Pgv9tLh9H660ufhuH7m69L0L//mQpAV/9AAB9AAAAAL0AABaq/qqUv/////7///////1VVVV//AAAAD/8AAAAP/wAAAA//QAAAH///////////////qqqqr/8AAAAP/wAAAA//AAAAD/9AAAAf/6qqqq///////5qqqqqqb/////+//////9qqr6qqQAAvQAAAAC9AAAKqv6qkB/////0L6qqq/QvQAAC9C9AAAH0L0AAAfQvqqqr9C/////0L6qqq/QvQAAB9C9AAAH0L0AAAfQvlVVW9C/////0H////+AAAHgAAAVVuVVAH////+Av////9C5VVVX0L/////Qv////9C5VVVX0L/////Qf////4AVVVVVQaqqqqqR/////+BVVvlVUGqq+qpAv////9Bqq/qqgVVW9VVT//////v/////+AAoAZAAoH0D0AH0fQvVVfR9H//99H1v//n0fb4UAfR++GkB9H6QfkH0fQAbgKB9AAbQFWlVVZAv////gH/////QfW9bl9B4HguH0HgeC4fQeB4Lh9G9b1uX5//////7//////ikApAAALgH5VVQfQv///g+L///+C5+H5b0CXgfgvQGkC/X0BuAf+VAL0b5/kC+b+B/5vm/gBv+pflVVqhv////kH/////QfW9bl9B9HguH0H0eC4fQfW9bl9b//////v/////4AAHgAABVVvVVUv/////2//////RVVvVVUBqr/qoAH////0AvlVVvQC+qqq9AL////0AvVVVfQC9VVV9AL////0AvVVVfQC+VVW9AL////0AuVVVfQW5VVV+T//////r/////+ALQBVVQAuAv//gC4C///AbgLlW9v/+uAH3//75VvBflL//8C+Av//wP+C5VvB/9LgB8L/9uAHx/76///fvnr//+9uFuVb6S4C4AfALgLgB8AuAuVbwC4C///ALQG//4AZAAAAAAAKQAAaqq+qqm//////mqqvqqpBqq/qpAL////4AuVVVbgC+qqq+AL6qqq4AuqqqrgC////+ALlVVW4Av////gC6qqquBflVVW9b/////+av/r/+oWv4L/pL/6AGv+vpAAAb5//////r/////+aq/6qqkAB+QAAAAL0AAAAB+AAAAAL4AAAAC////kAf////QH/qqq+B/0AAH4f/QAAfi/9AAB+Ln0AAH4EfQAAfgB9AAB+AH0AAH4AfqqqvgB////9AC////kAAAAKQBqqoAuAL//lW9UW+lv//4H0D///guAPgAAC5Q9AAAf/T0AAC/+PQAAf249AAC/Lj0AAL8uPQAAby59AAAfLn0AAB8ufAAAHy64AAAfvvgAAA//9AAABqvgAAAAB9AAABVUAPAAv/4B9AC//6v6qVuV///+C4Br6qUfQAfQAB9VW9VUL/////5//////v59H1VQ/n0vVUC+fS//+S59L//9Ln0VVvgufQAG9C59FVvQLn1//4Av/Sv/5B/4AW/9AVAABb0AAAAoAFVVAH0Av/5VvlRv/r///gfQv///C4C4fS4LgLR9LR/kuX1UL/2///h+vb///b49u9C4/j264Li+PbX19C499LrgLj30f9AuPvQ/0C5+4L/gL//m//kb/+/lvgAHr0AuAAABoAAVVAH0AL/+qvqpb+v///4Lgq+q6QuAH0LQH0AvB9AfQH+b4C/1u//4f/r1/X7+v9H4Hr55QeAFHnhV9VQee////h57///+HngB9AAeuAH0AB/4AfQACqQB9AAAAACgAAAAAGgAKqpAvQB//6//9Bb1b//4FvUtALgv/26quBr6b//4AeUtVbga/26quH/+b//4alUWqpRv////+r/////+Fb+VVVUB/6qqkBv////gv/lVVuD69VVW4AH////gAL///9AAZABVAAG5Av+AG/+X/4Av/9ub1C6270f9Lnrvq/i//+//9P//15b0fubX2+B9ttb/lHx/6//+eBpalqppaqqqqf//////ar+qqqkBv6qqpGv////0//VVVbhm+qqq+AH////0BpAAKAAH4AB9AALgAH0Aa/lqvqm//r///1W9+b5vALn0fR8B9Ph9HwLg////C+D///8f+fl9b3//9H0f/+v4fR+n0f6+vwfQv///B9BVvlUH0AB9AAfQAH0AA9AAfQACwAA9AACqqRVQAf/+f/gH+v+//Bvgv5X4v/r/0fT+b+fm4G9f0v/QC+9Av4AH/6r/5Bv////+v5VVVb/+VVVVam/////5L/////gBpX5ZQALgLh9AC+AuH+AvhX4G+L4L/gG9aAf9AGkGQFVVVAuC///+B9L///5r6VVVVL/9v//kavr///gB9uVVuALi+qr4B+H///QL9WqqlC/////4v/////3729H0fVfH6vq9B8f///0Hx+r6vQfH0fR9B8fq+r0Hw////QeBqqqkAAB4AAAVVb5VVb//////r/////4JH5b4ZB4L/+S4Hhv/+Lgfb5W9uB/////4Cqr/qqQFVflVUC/////5f/////19G5BUfX0fQbQ9fX+r+D19f//9PX0VVW69fQAAH/18AAAK+AAAAVqkBqqv//QL///+oAaqvlAAAAB9AAAAAH0AAGqq/6qqf/////4VVv+VVQAC/9AAAAv/9AAAL779AAC+fX9AAvh9H+Ab4H0G+X+AfQG+vQB9AC5UAH0ABAAAPQAAAAAoAAABakApAC//QH0AL/kAfQAV8Gq+qQH0v///avr+vq+///h9H2v6+H0fB/i4fR8L/bh9Hx//uH0fL//4fR9++vl+b7n0v///pfB///4B8AB9AAHwAH0AAfAAfQAB8AB9AACQACkAFaoFVVC//n//+L/5f//9FuB9Vb0C4HgAfWv6uAB9v/+4AH1r+bgAfQP0fQB9B/h+qv0L/n//+B//VpqUL/tGR4B/4R+L0L7gL0L0tuB+AfhS4fkAvQLm9AAuAufQAB4BlkAABABZBpAAav8L/+C/+S//4GvgfkfQAuH9W5BW5v//+P//qqq9q/pqqr0H9L///Qv4aqq9D/5VVb0f7////S/lqvqkv+AFtBD64q59tKLn7hn4AuueBv0C71+v7gLuC/5fAZAAUAUAAHkAAAVVvlVUL/////1//////X0WQaW4fW+C//gv/kFv/X/kVVb+P6r///5//////hb1H4AAAuAflVQC4B//+ALgCqr4AuAAALgG+kAAuL//gUC4v+pH6vQVAAb/4AAAAGqQAAB4AAAVVb1VVH/////9b/////kAfgB9AFV+Vb5V//////+qqqqqqgaqqqqQC////9AL5VVb0AuAAAPQC9VVW9AL////0Aav6+qAAB9H0AsAbgfQH1r9A/q+v+QC//m6QABqlAAAeQAAGqq+qqh//////Rq+qr6kVX5VvlX//////6qqqqqqBVVVVVAf////9B+qvqr0H6q+qvQfqv+r9B9Vvlb0H/////QGqr6qkC/////5Kqr/qqlVVb5VVf//////qqqqqqoHgALQAAfQA+AAC5AH0AAf//v/+h//////L71vq/V+uB9C4L24PgLguLh9AuBkuBQC4AC4AALgALgAAuAAuAAC4AC4AALgALgAAuAAuAAC4AC4AALgALgGq+AAuAv/4AB4AaqAAZAAdAAS0VW5VHbX///+euuq/ql67mr+pC7uv//9GulV+VRW5////r//qqqqr/pVVVQL4L//+Av4+qr4H/36qvgv/v//+H/q+qr4utD///j20PlVuFLQ9AW4AtD0L/gC0LQb5AC4AAAAAfgaqqkH9C///h/QGr+pL0KQLwC+G9AvAL//gC8Av/4ALwAW+QAvAAfkAC8AH5AALwAvqkAvAH//gC8ALqpALwAAAUAvAAAb0C8AAb/QLwBv/mq/qr+kf///uQAqqqoApAFAAAL4C4AAB/QfgAAf0C//+S+Gv///vh/5VW//v/QAH//+UAAfa/gFAB8L4AuAHx+QB+Aff6qS8B///9L0H7+pQfgvAAAAuC8ABpBULwGv0AA/b/5Bpb7/5AH//alAAb/kAZAGRQAC4AefkAvQC9vgH4ULwaBuX1vqpL1////4/v7/6pS/9FfQABvgB+apC4Cr//4vVf/6pH/+puBgf+kC9vQVQAH74AAaAf+ZAb9W/h4r/r/+Hr+S/m+uqQGUC/0AAAAC+AGQB5AAB+Af/+QL0C//9B9AflfgLhX9B9B9f/lb1L7////5v/////0b5vW5fQvR8Lh9H0HwuH0vZfr+vX/+///9f+r6qqgVAfAAGgAW8AAfBb/wAB9v+vlVfr6R///9VABv/+QBkGQAAALgvqqQC9C//+Afgfqr4C9V/qvgfX2qr9C+/VVb5L/////+W+av+qkLgBvkWB9Bv/W9P6rq//h//Vv/8H+lv270FAL5f7QAbpb/uBr9G++4v+q/b266S+v+HxAGR/gKH/////4v/////y5b5b1vLgfQuB8uB9C9Hy+v////L/////8FX5VVVQAv6qqpAL////4C/qqqvhv0AAC9f9pAAfi+X+QC9GkH+QvgAAG/b5AAAG//QBqqv/kAH///kAAb/qUAAB/////0L/////gvm9bluC4LguC4LguC4Lgvr+v6+B/////4CqqqqqQVVVVVVH/////9f/////0VVX1VVALQflVQA9B//+AD0H//4APQfVVAA9B9AABb5b5VVf//////v/////4f////+C/////9LluW5X0vr+v6vS/////9Bqvr6qQVV9fQAH//1//+f//X//4VV9flVWqr1+VUf//X//4qq9f//QAH19AAqqvX6qn//9f//2qr1/qqAAfX0AAAB9PQAAADgtAAAGQAGQAAvQB9ABW+Vb1Vv/////5v////+hVVvVVQL/////Qf////5AAAfQAAaqq+qqm//////mqqvqqpWqq+qqm//////mqq/6qpAAb/kAAAG9v5ABb+Qf+kv/gAb/++kAABvgAZAGQAAH4AvgAC/VBvkBvm9Fv4v5vi5f79b4L9b1S/q/9FAL/+r0AFVVVWUC//2//4b//r//0ZVuGVfS4C4tB9H0Li4H0GpuBqfQb64H99L+bm/X2+l+vpvWX/4W/9AG+QCqQZCgAAAC4fqqqpHi////8fblb1b3//UeUfb//1+18B9bn7nxr5fuffL/9u4t8a+QXgXwHwKuC/FvV+4f+///nn/2v7+f/vAufh/58H29H5HwvGQeBfH4Av5v8uAC/i/hkABUBUv//r//m//+///X5W5/l9H+bi/n0H+uG/vW/m5/p9v6br6bkfqr6q9B+VvlX0H6q+qvQfqr6q9Aq/qv6gL/////gqvqr+qFW+Vb5V//////9WvlW/pWv9AG/5/6QABr6pAAAAGgABoAAAAAHwAGAaq/qq9C/////0Gqv6v9AAAfR/gGqq+r+p//////6qqv/qqQAF/0AAABv5AUAFv5Ab4G/5Fv/Q//q/+lCp//5QaAC6UAB8ALgAALgAvVVW+AC////kAC///5C///v/+L//+//9G5fhVfgL79Lm9Avr0v/gC+vQv9AL79b/9AuX7/b9b///kH9/++Vbmhar6/+AB///6WgG/r+R/Qb9L+v0L+Vv/5AuW/5/QBW/vhvgb/5uAv2/5C4AbmkAGQAFAABoAAAAAL0AAGqq/qqp//////7+qv6qvvgC/kA++Af/0D74L+v5Pvm/Qb9++vkoL375kH0FPvgAvQA++AH+AD74B//QPvgf2/k++b9B/n76+QBufvmQAB+++AAAL/60AAAaqAAAaQAAFVW+VVS//////r/////+Bv5Vb9Av+qq/9C///+r+FVVVVW4L////1R/////gH5VVVuAf6qqr4B/////gH5VVVuAf////4B/////gH0AAAuAfQAGW4B9AAf/gC0ABv9AapCqqpH/4v//4fri+qvh9eLgAuH14uAC4fri4ALh/+LkAuH74v//4fXi///h9eLlVuH24uAC4f/i4ALh/+LgAuH24vqr4fXi///h8eGqqpLh4AAAAubqqqqr7+v///vflqqqpAALXgBUqq+vWvn//6//5aqvr6loFa+vQH7//6+qv/6vn//0VVpWqlAv////kC/////QPlVVV9A/////0D/////QPlVVW9A/////0D+qqq/QPgAAB9A+AAFb0C4AB//QLgAC/4BVUB4AAf/gLwAC/+B+GgLm4PwfQuHi9AuC5ufgB9L/6+Wr4v/r///65uv6pbrh4VAAaubiqqqS/+f//+L/5+qr4ubn0ALi4efAAuLh58AC4uHn0ALj1uf6q+Pv5///45uRqqpAVVBR4AC/4LbgAf/h9uAB9uL29VH24v//9frn///l/+vW5UH/+4LgAfb/QuAB9uUC4AH64av6of/i///x++Gr+pH24ALgAfbgAuAB8uAC4ALi4ALgAubmq/qn6+v///rb1qqqpApAGQAAL1keAKR+Lh4b9b0fr7/i/r/v/kL///+QZalW/gC4aqpvlvn//1//9flfiqqR+q+ZAAH//64Bpflfrmv1+V+v/9H//6/pVfqvrkB99AuuAL31r6+q+fX/X//koGkGqlAVQH6UAL/gv/4B/+Aa/0H64VVVAfbn/9AR+uL/4Ln/4ALh+f/lUvb19uv6++H26/r/0frguv+B/+C6/gH/4Lr+Afbh9u+B9uLi69Ly5+Ln4uLrwuL25v9W4L/v/X/ga9vgL9AAAAVCgYC/h4fS0f/X18eB99br25H32///4ffWr6qR/9VvVVH/7///+ffa/r+l99L5b0H32///5f//6r/9/+qQH2n30fqvkefS///h49FVVuLj1qqC4ufb/+bT79VV/9OagAB/gAABpAAAABv+QAABv//kAG/5Bv+S/5QBb/r/////+F////5UBVb1VQAAAfQAAv/////n//////lVVvlVUAAB9AAAG////gAv////QD5VVW9APQAAD0A+VVVfQC////9AL////0AGQAAAAC+AAAAAv////+b/////5ptLn19Br+/vr6r/////+F+bn19Qr+/vr6W/////9FvVVV9QH/+ar6Qvr6///b4fXm+W/19tH0Gb/S5flAb4L//5r+Aar6b+QAAfQVQAAApAAtAAeAAD4AC8Aav6qv6n//////mr6qq+pAPRkLgAAtL0eAAAQfgUAFVVvVVT//////v/////+V+VVVVQC4AAAAALgAAAAAuAAAAAC4AAAAALgAAAAAvqqqqQC////+AG////0ACkAKAAAfQB9AL/////5v/////5VvlW+VQA9AH0AAGgJKAAAuB9AFAH0H0G9B+AfR/kL0B9v4C/QH/5Av9Bv5AC71/+ABQLr70AfAtZfQB8C0B9AHwLQH5VvAtAP//4C0Ab/+ABkABkAFblVblS/////////////Vb1Vb1UAZCgZAAVVvlVQC////+Af////9B+VfVb0H0B9AfRvqr6q+f//////qqv/+qoABv/kAAAb5vkAAb+Bv5Ab/QAf+X/kAAb+LkAAAGkAKABkAAB9ALgAb/////m//////hV+VblUAC0AeAAaqqqqqb/////+vqq+qr64AHwALrmqvqqtF////9QBW//lQAAb/+QAAH+9vQAG+X1vkG/gfQv5/kB9Af6kAH0AGQAAKAAAAHgALQAVvVV+VL/////+f/////4VvVV+VAW5VW1Qv/////m//////rlVfVV+uAB9AH1aQHwBZAvQuAfQBvT9H4ABtf5uQAAX7/0AAB+X+AABvkH+QG/4AG/p/5AABv6pAAAAbgApACgAFX5VfVS//////q/////6Ab0BvQAC5AfUAAvRC+qoH0uf//1+b75Vvb/+vQB9a/X6QH0H4avAfR+AB+B9b69C4H1//gH0fWpUAKR8AFpAALhr/4GV+L/6Qv/0aUABv+AAGQApAAVuVW5Ub/////4v/////h5uCm4AL5lfmVAL6///+ALr///4FVH5ZVB/0vW0AGvX//6kA9f///gD0VX5UAPVVflUA9v///0H6qv+qR/0AfQAf/6VpVW9b////2QG////ACwAeAAVfVW5VP/////+v/////4FfVW5UBQtALVALn4A9uAf/QH1+Bv0AfR4b/ar/v6++v///lX5VvlVB/0C/AAf/Qf+AL5tC+9A+S0fX5CgfW4H5Ba+/QL5L//kAL4b25AALQAZAGgAFW5VfVW//////7/////+AW5VvUAKv6q+oB/////0H5vX5vQfR4LR9B9bl+X0H/////QL////4ABv6qqkBv////h/+qqr9L6pABvgFC+Rv4AVW//9AL///5AAv/+lAAAAKQAoAGq+qr6pv/////9VvlW+VWq+qr6pv/////+5qqqqb3X///9uFVVVVVl//////mr//6r6Fr/+BaR/6r+v9Gpb7/+QGv6v64B/pr/X0BWv59L0a/qr0b2+kf+AKVQBqgAAALQAGgBq+qqvqf//////avq+r6mq+r6vqv//////aq/qrqkG/pa9QAav/6bgFr6VAvi/+qqv/q+qqqlvGqqqqqkf////+C+VvlX4L6q+qvgv////+C+VvlX4H/////gf////9AAeACgAaq+qvqm//////1Vvlb75FBpVbrh5v////n2////+fvaqrhR/+//uLRr7rl59Vvvunri/+//v+H77luv0Lfvq6+V99//n63n3rkvbuufuX//21//+/qfRqvi+AUAB4CkAaAAoAGq+qr6p//////6qvuq+qRq54brQP/i25tB++f//9H25///0frlblVR//////n6////+fbm9VvR+uvm2/X//+fv+frq9+5l4uG72gLi5vvvkub/69v37+p/0fqbkC+AUAAHgAAAAAfqqpAAB///4AAL1VVAaq/6qqR/////+LlfVVX4vq/v4fS///qm4L1fVQuAuA/qr4C4C//+QLgBVVQAuCqqkAC4f//gFLh9VuB99LgC4H72+AL6v+vgAv/6moAAapAAB5AAAAAH6qqQAAf//+AVW+VVUH/////4v7/qq/i4H1VQuL6v/+C4v/+qpuC5H6pbgLgf//9AuAbn1QC4AtfRALni19eAuvbX28H1+tfbgfS6199C+r/776fr////+9VVVVVUAZAAAAAC4AAAABblL//4v/+v//n//5W+VfrrgH0B9uuAfAH264B8AfbrgHwB9uuAfAH264B8Af//gHwA//+AfABr6kB8AALmgHwAAufQfQBX/+q+pv/////6/qX+qqVUAKQAABQAAoAAfQAH0AB9AVvVQL6r///Q/////+H664fS4uLrh9Lj5tuH0uP5S4fS4XwLh9LgfAub1uB8C///4HwGv/6QfAAH0oB9ZAfT4H70B9Lgf+Vb6/R/r///+H5v/qW4FBVQAGgAAfQAABqq+qpAf////8B+q/qr0HgB9AfQeAL0B9B/////0H////+AFVb5b4FVVvlf4//////2//6qqvxaqqqVqH/////Qv/+/79C4bQuH0LgtC0fRuX5fl9f////////////4BkAGgABbUAfAAf/5r+kB//n//gBblF+vAW/6r18X//r/X3qvkf/fua9L+Zv1/0aQB+BqVuVVkC////9Af6v6r0B9VuVbQH+r/r9AL////0AFVuVvQaqr+v+B////69BVVVQBgAAfC0ABqq9fqqb//1//9FVvX5VRqr9f6qG//1//4FVfX1VS//9f//r//1//+AAarkAAFVr6VUAv////0H6q+qvQfQH0B9B/6/6v0C/////QBVb5W9Kqq///9////6r9pVVUAHwAAeAAAAAC8AAAAAfgAAAaq/qqQH/////Qf7+v79B9Lg+H0H0uD4fQfS4Ph9B9Lg+H0H0uD4fQfS4Ph9B9Lg+H0H0uD4fQfS4Ph9B9Lg+H0H0uD4fRvm9fm+b/////+v/////4BoFVVUAL1///4C+H///gvgFVVVH5AAAAAeVAVVVAB9v///gLn////C9FVW+Uf0AAH0H/AAAfQ/8AAB9CrwAAH0AfAAAfQB8AAB9AHwAAH0AfABVfQB8Af/9AHwAv/gAaAAVUAAtaABVAH19Uv+B+L/6/5fh//lVD5LkAAAKR9AAAABv6qr/4Lr////h9b6lbkLwLQAeC/a+pB4P+//9HgX2vqkeAfAtAB4B8C0AHgHwLRQeAfAuuB4B8C/6bgHgL9f+AeAaQv0AAAaAAAAAB9AAAVVb5VVL/////+b/////0AAv4AAAAD/wAkAAvvQb0AH5uH+AB/S+/gAf0H/0AH+AL5AB/4AL0Av7gAf0C5uAAv0FC4BQv4AL2vQf4Av/9AbwC/6QAEAH5AAAAAGQBkAAVuVLngH//+ufgb//m4fQAuALgZqr+q/qn//////lVvVb5VFW9VfWR///+9uGv+qn70AfgZL/AH6X0v4G/v+B/V/9v0H56r1vl/ngfuav/uB/0b5v4GpB+B/QAACQBoGqqkULR///20uCv6qfS4B/qk9Lhv//j0uL+W9PS4V+vgtLgW/5Aa+L/+aB/0qpB9CpBqqr+qqb/////+aq/+qqkAb65C4AH+G5vQG/gH/0C/+FH+QLm+9G/pUH/kC/4AfkABbf//////aqvq+qkar+v6pB+r6vr4H6vq+vgL6/qqpAvX+qqqL6+qqqW+f6qqpGWvlVW4B9vqqvgfi5VVuG9H/6r4/0G+qpCvW///4B9//m/gH2q/v4AfVb//pR9//r/+Cm6kFqkL////0B/////gH5VVV+AfQBAC4B9AuALgH0C4AuAfQLgC4B9AuALgH0D6guAfQf/C4B9B/8LgH0L7wuAeA+vB4AUL18BAAB+HwAoAv0fAHwb9B9Avb+QH+v//QAf//fkAAaqkAABoABACkH0AtAPgfgH0AfguRuRr////+X//////vVVVVW+9VVVVbn7////uJvqqr+UC4BQH0ALgeAfQAuC4B9AC4f5H0ALi/4fQAZfrgpoAb9uAHxb/S5Vuv/kH//2+UAGqpAC0AVWpav6b//1//+vqpBX5S5VUGv6b//5//9/v6RX5X0tAKvguC0Av9H0LQGqlvlpV//////6qqqqqqQqqqqqgCqqqqpAKqqqqoAqqqqqQH////+Avqqqq9C+qqqv0GqqqquAaQBVVUB+R///+C/X///8C+Fb1bwC4AuAfVRAC4B+/gAfQL7+AH4VuG4B/X/4Lgf0f+QuB5AWUC4Bv/+kLgH///guEfqq+C558AC4LvngALgv8eAAuC/R9VX4L4H///geAb//9LQAoAAAvQH6qkB/Qv//0B+L6q+ABp+QL0FUf///+/2//////W+VVVR9C4VVQH0Ln//QfQuv/9B9C65H0H0LrgfQfZtua9B//26/kH/vbllof68uAHx/bi9V/D19H//4JHwL/+B4AaAHgH4B+AuAL4C4H4ALlb5vlAFf///9pBqv+qr9AAfQAb4AB9AALgav+qQuC///9C4FW+VQLgAH0AAuBVflVC6////8L/////gv5AfQAC/QB9AAL0AH0AAtAAfQAAAAApAApAHgC0H9FvVflH9////8G2r6r6gBAfVfQVQBv/9C+AVr6UL8H///4HwfW9b0fB+r6vR8G///4HwFW9VQfC////h8b///+H2VW9VQf+v///R/2///5H+VW9VQfn////g5P///+AABoAAAVVb1VVH/////+aqqqqqkGqqqqkAvqqqvQBqqqqpAVVVVVVL/////++qqqqq/2////rqav/qppFa/9BpB/qv+/0Favr/5AL+q/70Aqq+vb0Gv779L5elL/gH4AAaoAFQv////gD/////QflX5V9K+qvqr6//////9vqr6q+R9AfQH0H+q/qvQL////9AVVVVVQBqqqqqAP////9B+qqqr0H0BkAPQfQL0A9A9C+qSgChvn/pAWv4G/+b/9ABb+f5QAAG4VVQCgAH//QfAAv/9B9AC5G0H+qbhbQf/+uetB+qm560H0ALnrQfVQuetb//S666//+LrrrlW4uuuuALi6224AuGvWbgC4B+QuALgL/S4AuC9/blW4fRuv//j4AV//5KAAAAAAAAAABlRqqf/bab/9/+tuuWxVS1q1rlVvmbav///+tq6r7+m2rUfLQLat58uAtq3n64C2ref/gLat5+uAu63nx4Z7qefD2xeV58LbC+Hn6usetfv+/21+/+X+uC/pAL6gBUAAbW/+b//4f/9///y5X31VfLgffqq8up9///y6331VfLrff//8ut9///i631+qlLrfH//+ut9///6637r77ruf59uua4Wbm24H4G5eLgv5uX0uLn6l+C59H1vqvfgFb5/9oAAtBqQAABkAAAAALgAAC/////gf/////QVVblVUAAAuAABqqr+qqb//////aqv6+qoAA9H0AAKT0fbQB9fR9uALx9H19B+H0fS4L0vB9L1+H4H0fr0vQfQuaH6r9BkB+b/gAAHkapAAAaAApAAB8AH4AGv6Qv4Af/+L70AW9R+L0AHwLlf0Wvq9uf3///r4f2r6q+aaKfC/W8B99blvQH3+Vv1off5v5bh+9L5b9H/wFa+Qf/Rr/gC6+b+kALi//6qp9Bv///2gAFqqpABkAAAAALgaqqhq/q///b//1vW9avpC4H0VuQLQfb//19V9v///b/gVuW4apBi4GVaUPbkv//h9v6///X2/rgB9frkuAH1/+C/q/X/4L//4vv0FVVS4v6qqqfQb///+9AGqqqkL////4B/////0H6qqqvQfQAAB9B9AAAH0H+qqqvQf////9Aqqv6qgAEB9AAACkD0AAAPQPqqkB9A///gH0D//+AvQPVVQD/Q9AAAf/X0AAC5//QAAvRv/6qr4Ab////QAFaqpBVQChQAv/gfbkD/+B9fgPV4H0aQ8HmvqqT0ev///Pq5v6qkv/guAABb1C+qpEeAP//05+l/1fXn/r/S4efVuubh54H1+9HnluC/gev/0L9B///B/5L/r0v75+Q+b5H9QCk+AGgAAAoAAGqkL6qQv/h///S5uL6r4LS6/QfQtL//X4C6/5/vQL/5B/0Ab+Rr/kBbh/+v9eub+Qf56/6pVqXr/v//0euV///R64H0B9HrmfQH0fv+9AfS//n6q9P+Qf//0pQAaqpAv+H//9C/8v6v0PXy5Vbg9PH//9D08KqqgPX1VRVQv/v+v/Rv6665tFtLnrm160v+v/Xr5qqqkev1V9VR61v///nrS///6etQL/QB6/R//QH/5vv/gv5b59v25C5D0fgAFAKAVAAC4AAABVb1VAAf////QC////9ALlVVX0AvqqqvQC////9ALlVVX6gvqqqv/C/////4LlVVb+AuVVVvgv////9C//+//0BVQX+fQAAG/R9AAb/kH0Bv+UavQf6QC/9ApAAGqQAKAAGQAB4AAtABblVb5Vf//////v+qv+qouAAfQAC6kB9AAffX///699v///776b5VVv/9fQABq+S/qqQD0L//+APqVVf1q/9AC9P/+mUvgqvQv/4AA9Bv/5AD0AGv+ALQAAb4ALgC1kBq/qbr0P//+uL0av6m4aBVuVblUv/////6//////hflVblkr//5ubS///259C+ZVH/gL24Af9A/v6l/gC///T9KBW5Uv08Vb6r/n7///+vvar6/l/8ALi4B/gAZFABoH/////4v/////i9VVVVULhVVVVAuf///9C5v///kLgAAAAAuVVVVVC/////+L/////4ub29VVC4uH4B9Li4L1v0uLgf/5H0uAv+AfS4Av0C8L2pv0Pgv/gv59C/5Af5QGkAAbmQAAAWkvkaqv/hvl///5AfSqvVAAUAC4AAAAALgAAAAAuAAVUVW5VS/n////r+v////B4VW5VQHgALgAAeAAuAAB4AC4AAHwALgAAvQAuAAL+QB4AC+vpVVVPhv///+pAav//4UACkHgH4APQfQb4V+W+Ub2////wKL///+AAB9B9AAAD0H0GpAPQfQ/4B9B9Cv2////gff////B9W+W+UHwLgH0AfC9AfQB9fgB9AH25AH0B/5QAFAb/+qqqq9b////7gFaqqpZAAB0AC+QALgAH/RW+VQG+f///gBl///+AAH1VW4AAeAALhqh9VVuL/X///4a9f///gD19VVuAPXgAC4A9eAALgD19VVuAPX///4B+f///Qf+VVVUH6/pVVVuS////5kBa///hQAtAKAfgC4B9AvgH4LkAvb///6AV////4ABVb5VQABQeAAakeB4Hi/24HguGvbgeC4B9vW9bgH2///+AfX///4B9BW5VAH0AfgAAvQH9AAH/UvQAB/v7+qqb0v///+ZAaqqqkpGqqqoH5v///0L+v+r/AH0fgf0AFBvr+QAAv///gUH///+L9fV9W4/5+r6vhvn///+Aufm+W4C5+b5bgLn///+Aufq/r4C59H0bgLn0Pb+C/uApv0vv5VWun5v/////Qb///+AACgBkBUAfQLgL0F+W+Uf2////4b7////gZFW+VUAAb//+AUC///9L9L1Vb0/4v///Rfi+qq9AuL5Vb0C4v///QLi9VW9AuL6qv0C9v///Qf5VVVUH/+qqqk/W////60Bq//+S//+v/4f/////0aq+v6/QZC4tC8C4Li0fgPguLR9B+X59LgH///1+Af///X4AVv59L0AC/i0fgAv+LQfQH74tA+B+bi0C8f0uLQL39C4tAv/Vfi6/6l/+Lv/QH/0takAGpBkAAAeABVVBW9Uv/9f//6//1///rlvB9V5uD4D4Hi4fQLwuLi9BfX1uLgv///5+C////i9BVVVuH4Gqqm4L0v//bgPi+q+uAvLgC64B8uALrgLy5V+uq+L//66/kf//bhUAFVQdAAFVVAKQD//9AuAP//6r+pF3Vf//0HdRrqqX//gtHgv//H0uC7e8fS4Lt72/v0u3vfv/27e+4vrr5//R9evR/ULQW5V+q+qb/////+vqvqv6m5V9AuAL//wC0Af/+ALQAFVQAtAL//n//+///v//5rul+qvhe1H//+v/+v//6//69Vbru7r6q+tqev//62p5/v6ba3n09Aur+fr6m6f+///rkX/q+ptVf5X5S//+///r6vn//+tAeBX1C6q9Vflb//7///v/+v//8f////9C/////4L6q+qvguAH0AuC+qvqr4L/////gv////+C5AfQG4LkB9ALgv////+B/////4Cqq+qqQAAH0AABqqvqqkL/////wv////+AAAfQAAVVW+VVX////////////+Gqqqr+Av////8Bqq/qpQVVW9VVT//////r/////+Gqq+qqQf////9C+qvqr4L1W+Vfgv////+C+qvqr4L6q+qvgf////9AaqvqqQKqr/qqQv////+FVVvlVU//////7//////i//6//4P//r//09uuVV/T214pH0Pv/i++A//+H/kD664H9APbXlb1U++uv//y//6///GvqRbm4BtAAuLmv+oC59f//gLrgV+VAutAD1UC4QAf/0LgBv/+q+AL+lC/0AZQAGuQAAAGkAAAAB/4AAAAv/5AAAb5b+QAb+AH/gb/UAG/3//////6n///9aAFW+VQAAAH0AABqq/6qkL/////gaqr6qpALQfQZAAuR9C8AB+H0LgAC4fR9AFWV+b1S//////n/////9BAoBkAAeD0LlVC4fR//+Lh9L//4uH1+fVC4fXkvQLh9ZB+AeD/9C4AAf/+VQAb+W/5Bv/lW//v//////qar/qlkFVb5VUB/////0Cv7/r+QAtH0fQFW5fm9V/////////////wPQC0AAB+QPgAAL/h+VVR/+b///L1B///9uUfkAL7/6+AAf//rrQB+r0VvQHwfQB+Qfa+kB9B///gBrn6/pAG+fB9AW/l8H0W/kHwfXvkAvB++UAC8H/gCqvgf4Af/9ApAAb/QGQAJKQAuAB5vgC+kLxuAf/gfRpC9Vq//4LgL///h/+qvlQP/9B9AAu9QH5akHgav//mvm//ql//2m4bRr5AH39AeAAf/QB4UB/0AHr1v+Hgf/v79uB/v5H/4H5pAH/QFAAAGkB4AoAKQLkHwAtAv5vVX5H/r///4fVf/7/i5AfQH0f/19APT//X0A9KuUfQD0B4B9VfQblH//9L/+f//0v/59VfQblH0A9AeFfQD0B559APQH/n0A9Af5fqr0B+R///QGgBqqkAeABCkAC9QtPQAL/m49AB/+fr6lH1C///4uUL7/qX/59H0Av/7gfQC70aV+VQfB////a+mq/6q//gC+AGvpAL4AB8AB/0AHxQLrgAffS9fgB/5vgfQH+b4Avgfm+AAvAkGgABoHgFVVQAuW///0D/r///gf+blW9C5AvQfgflBvb4C/+Bv+AP/0W/5Qq5b///kLT/rm/luaUuBV//qr+qSv6v//9AtBVvVQC0AC4AALW///+Qu////9C/lW5VQHkAHgAAEAAeAAB4AQAHgH0LkBuAv9f5f0C/kb/9AfUAH/kC4AB//0P6Rv1v6//f5Ub7vlpHgFV4BVuVQH0f///r/6///+v/hVuVQX0Ch54AeAeHn0B5m4eLgH7vR4fQf/4bguB+fX+B8Cgkf4CQeAVQeAC5L/i4Af+/+b1R/r26/+LkLXr/9+AteLn7/664uf//r/i5+rgteLnwuC14ufr+bXi5//+/+LX2+W/59fC4LXn18LltefHwur1/4fC/vv/h8L+//9bwvv6br+BkZAtfkCgAAAAAfUb//4C/2///0f+blVfS5AuAB9flS+qr2/+L///f/oar6kV4AAfQAHgb//+mvm//////76+q9r5uH4HweB4v5fB5rn6+8H7/+G/wf//0BvB/r5AW8H4eAC/wFBoAGpAoAHQAAH1B//+Av+f//9D/r/RvgfQv/b4C4Bl/+Qf/gW/6S/+b/r/mvRqqlqB4Cq/qlr6f///r/9VblUa+Vq/qgHgL///QeFVblUB+6q/qkH/v///gf4Vb1VB+AAuAABQAB4AAKAaAGgB9S9AvAL/X4D4B/5b1vgLkH///guUf//+H/59AC4v/ngALhr0fVVuAeB///4b+m///i//R+fUFvkH18AB4AfXwUHhR9fHwfuLh8fB/69H18H+vgf/gfn5Av5AUKQAVAHQAAVZAuRqr/4H/r//6Qf+VX0AC4FqvqpfUf///6/9v77+f/0ufXgq4G59uQLS////m+v///+//i59uCv5Lj14AtBufrlC0v///4Lb6v+qgv9AfQAC/qq+qkL5////guBqqqpAoAApAAHgFX5VQvm////H/mq/qouUKr6pH5R///9v/rlVX3/+fqqvauR+qq9C4H1Vb1v5v///f/+5VV9X5X+qv0LgfqqvQua9VV9C/////8L/////gv2vkv5C5v5Ab8GSpAAGgeAVVVUC5b///4L+v///h/4V59ULlGr76h+Av///b/m659t//brr71bkv///QtAVVVUb6Wqqqn//v///W+lVVVUC0b///4LW////guuZbmUC/60uuQL++W6+Qvvl/h+BUpG9BkB4AAGQALgAB+AAuABv4AC4Af9AALgb+QAAub/QAAC6/kAAALqkAAAa/qqqqq//////2r6vqqpAuB+AAAC4C9AAALgH9AAAuAH5AAC4AL9AALhuL+QAvv4H/kC/5AG/gH5AABpD4BVVVQL0v///gbi///+AZBVVX5kAC0ALrgAfQAuuAB9AC64ALgALrgAuQAuuAH+QC64Av+QLrgL1/QuuB+B/S64fkB+br79AB++vuQAB765QAABLrgAAAa+uAAAB/5kAAABqB9AVVVUH9L///4H4v///wGQVVVvtAAAAC/4FVVUL/i///0v+L///i/4uQB+L/i4AD4v+LgAPi/4uAA+L/i4AD4v+L6qvi/4v//9L/hVVVQv+AAAAC/4AAAKv/gAAB//pAAABakaAAAAAC+BqqqpG+L///4G4VVVvmBAAAA+9KqqkD70v//wPvRZVvA+9C0C4D70LgLgPvQvq/k+9C///n70FVVufvVVVS5++v//bn71qqpuPvQAGr0+9AAv/r70AAVX/qQAAAGkVVQB4AD//QLwAP/+AvAA9b0C8AD0vQLwAPS4AvAA9fQC9AD19AL0APW4A/gA9H0H/AD0Lgv9APQuH64A9H4vX0D+/X4PgP/5+AvQ+Vf0AvT0H+AB+PS/gAC+9P4AAC+kpAAABVVUAfQA//0B+AD+v6r+qvR/////9LmvlVX19C4AAPX0LlVU9vQv//31+C+q/vS8PgB+9D1+AH70PX0AfvR9fQB+//28AH7/5fgAffQC9AB99AfhUL30H9b/+PQ/Qv/0pBkAVVCqqGqqqf/+v//+/v6+qr70vbgAPvS5uAA+9fi4AD729LgAPvrguAA+++C+qr774L///vX4vqq+9L24AD70frgAPvQv+AA+9C/4AD70L/gAPvr+uVV++/m///71lH///aQAFVVUqqkaqqn//3////7+f6q/+H1+AC/4vX4AL/n4flVv+vR////6+H////i9flVv+H1+AC/4Pn5Vb/h+f///+r6//////b5Vb/6l/QAv9AL4AC/0B/RVb/Qf4L//9C+Af/6gGgAVVBVUC1VQv/gv//j/+H//+PW5/lb09fv/i+D1+9//kPbhS/9A9tGv/6T26/6r/vX6pbVp9LlV+VT0u////fW6+/6o//rQ+AD/59D4APQH///69Af////0AVX5VfQAALgAoAAApABqpaqqpP/5///4/vr6qvj19fAAuPX1+VX49uH///j24fqq+Prh8AC49vH1Vfj09f//+PS6//6k9H729C74vvH0v/768Lr5//bwf+T6kfAvkPQB8B/g9AH71/n0Af/R//QBukBvAFBoGQAB9HgvQAfkfB/gH9B8L/h/QH2+vrkAv+QvFFr/gAVr/+uAAP/+m+VUq/////4H5W+VVQfVX5VUB/////gH5W+VVAfqr6qkB/////gH1V9VUAfqr6qqB/////8GlVVVVAHgAUkAAfALn0AC9A+fgG//n5uUf/////4b5r+/6QfR/h9AC4L+X1QLqq///R+4L//9LrguX1B+9C4fQLr6L6+pt+tv//0H266vpAvb7h8AH///r6kf6v///gUBr6qpAAAeAAAVVQttAH//n25Aar6uH0AZfb+v6i4u///+LS/+b1R8L/0fAHl+fq+lv/+///6//76vqRb9fR8AB/0ub1QLvS///h9tL7+pfi0tHwC4LS0eAOQ9LV9VRr0v//8H/S6qqgFkKQAAH/////Qv////+BVVvlVUqqr/qqr///////lVvVVv+v69/6+1qX2qbRFVfVVAB/69/9AGqWmqQBv////kH/////gFVVVV+Aqqqqr4H/////gKqqqq+AVVVVX4L/////Qf////5Av////0Cqq/qqAqqr6qqb/////+uVV9VV65qn2qXmWpfWpZAqptqpAFVWlVVS/////+L6q/qqouAC4AAC6qv6qkLv////guVb5VuC0AvQC4fQb0ALh9b+AV+Lr+QD/0peQAK9Av////9Bv////gVVW+VVS//////v6q/qq/9qm5qm/3/rr/rqVVuVVZB/25/4AGqXmqgAVVVVVAL/////Qvqv6r9C4BuQH0L6r+q/Qv////9C5VvVX0LlW9VvQv////9B/////gC/////AL////4AVVflVUb/////6+qr+qvrmqbapuuaptqq65qm2qvWWqLaqob+WqqvR/9v//4BvhVvVAG/qq+qku/////X25VvVUL/ar/qQf9v//9B//6pVUvm////64Ba///Qv////gCqr/qqBqqr6qqb//////uVV+am+6qn2qr3mqfVVuAqp9qpQFqr6qlB/////9H6qqqqQeb///9B9qqqqkH6qqqqof/////i69v1vkLn0v79B9fW//lLx//r/+uH/oFv4L////9Aqqv6qkGqq+qql//////n2qfqquef5tv65lqm2qmQH+baqAAHgZVVAVvW//+H///6r4a/6+VbgH/S//+Av/blW4H7/+qrh+vv//+Lh5vlW4oHguqrgAeC//+AB4FqqkC/////QGqr6qoGqqvqqpv/////65aX5qbnmqbWpeFqq9qoVfqvmqkL/////4H1bn1bgLqtfVuAa+l//4L//n1bgtuffquC//5//4FblX1biq/quAuKr+r4W4AHgfX/gAeAoL5B/////gCqr/qqAaqr6qqX/////+fqq+qr5+qn2qviqqfaq9Bqp9rpQaqpluVB//7//9Llvb//kv/9Lh4C//m/v5LlVv//4v/9VvlT//2q+pf9fv//66/9VvVWb/gB4AAFUAGgAAAHgAABqqvqqUf/////waqr6qpB/////kGqr+qqBqqr6qqf/////+VqqqqpUG////kAv////gD5VVV+AP////4A/qqqvgD6qqq+AP////4A+VVVfgD0AAp+APQAH/0AtAAL+QAaAAAAAV9Uaqqr//6///v//hX28B9AAfXwHwAB9fKvqSn19//9fvXxb1R99fAfALrx9q+ptuH7//9W4fVvr0fR8B8PS9HwHw9fgfAfb29B8B//vgLwH1r5a+AfAuS/0B4BkBpAAAfQAABVV+VVAv////+S/////9Bb5VflQAfgB9AGq/qr6pv/////9qqqqqqgFVVVVAB////+AL////4AuVVVbgC+qqquAL////4AvqqqvgC4AAAuAL1VVW4Av////gB////9Bqqv///v//////r+mq+qkH0ALgAAfAq/qkB8H///gHwfqq+AfB8GS4B8HwtLgHwfC4uAfB8LS4B8Hw9LgHwfH0uAfB8fS4B8H25LgHwav+tAfAb6/kv8b+G/2/n/QBv1pfkAAeH////4Av////0C5VVVvQLgABR9AuAAfX0C5oB8fQLr4Lh9Aub19H0C4f/gfQLgf9B9AuAv0H0C4C/gfQLgv/h9A+L5vX2X6+B/fffvgB9++9oABS/rgAAAH+9AAAAb2kAAAAaL///4AU////0G5qqqvQvgAAC9L5AAAL1/QAAAvv0AAAC/9AAAAL/0AAAAfv0AAAB9f4AAAH0f4AAAfgfgAAAuAZAAAC9BoAAAH4LwAAAP0vAAAAvm8AAAAv/gAAABv9AAAABvgGQBoAAAuALgAAD4AuVVQf/X///i/+v//+fn65pH69fvXwvflq9fC8q0fh8LgLgoL0YAuAAvgAC4AC+AALgAf9AAuAC+4AC5ofn4ALrm9L0Av9vgfkC/b4AfkLl+QAvgUHkAAuAVVVaqAL////9A////+gBVV9UAAVVX5VVX/////+b/////4Ab779AAH+fb+QG/R9H/m/kCkG//qv///+Vv///9QC5VVX0ALqqqvQAv///9AC6qqr0ALlVVfQAv///9AC////0Af////QC////+ALlVUG4Av//QLgC6quAuBrqq+q+f//////+qqqqq/1VVVVX/v////+++qqq/1n6qqr1Af////QB+VVW9AH////0Af////QB9AAB9AH0AKv0AfQAv+AAoABakAFUEAaAC/+5q+pfr6///5+bX76qX+tFv/+eq0L69W+/kvv6f//5v/++W/4aqT6rrn/+H/9euV9fW16//1//XrqvX+9evq9fW16+r1//Xri/X1uutL4fW7/qql9/+v//ymqgaqpAABoAAAAAL0AAKqq/6qqv/////5WqqqqlQL///+AB+qqq9AH1VVX0Af////AAqqqqkBqqqqqpL/////9vlVVVb24qqqpfbn///59ufqqrn25+qq+fbm///69uBVVX/14AAAL+AAAuAAABVX5VVAf////9B/////0H0BuAfQfqr6q9B/////0H6q+qvQfQLgB9B+q/qr0H/////QFq/6ukAAH/j2QABv+ufQAb27++AH9Lv6+B/guVC9v4C+qvr5AL//9uQAFVVQAAAD0AGqkFvlAv/n///halv///QAC4L19AAL6/r2qq////f//6vq9a+bm+X0Llv///R+5///4Hm0L+pAuLgv6lH1vL/utv/++v66/6/2//2lH9LluAB/gv/4AL0B/+QAZAAVQCkAAoAAfQAH0AG+Sq/6p//f///7699W9vvH36v6+8ff///7x99X1fvr31vV+//f///7/9v//+fXwC+ZA8fAf55Dx8C//ePHwf/+99vH6/+7/9/b1X6qv0vq/AC9B//4APQBqpC/////9L/////4tVW5fVC1VfVuULv////0tq/q/qS0L5C+QLb9eB/k//m9W/z6////1fblfVfB9v///8Hy5b1bweL6vquB4av/ukLgBv5mFuBf7qt/1v5fqrvf5B//9YpABqqQAAB0AAAFVb1VUC/////8fq/qv6h5q6WupHr/+v/4eW/hv5B5v/b/4H7rr664f5f+XWx+r/+ukHr6r6vQevqvq9B6+r+r0Hr6vqvQuar//4C0Bv+6VfRb27q+6/5L+v7b5Av/9B0AAAAAL6WqWqR/+v9v+Lr222159vbbbXr79v9v+f/5/l/k62hVBVDraf//5P+5///k//lVVVDrbqqqqOtu///8//l9VVBqpH6qkAAUf//gFr0VV+G/+RVb4vpQv//QUABv/kApAACQQH6kpeHQv/S55tH19X770uHi///7+/W//6X/+G//keu6+ef163/h4bn/+vVS0f/4/6vl63n77/XruueW0f/757rQqqr/utABZH6/+Fv4fX/6/+X4BtLpB+AC0AAGgAKAAAAGgAFVABvQA/+Gv/qT/4v//+Pbi9pX49uLi0Lj24uL0uPbi4LT49uLgWvj24uAL9Pbi5AVQ9uL///n24v///vbgVVV+9uVVVS77////bv////9+qpFVVb4AAAAf/QAAABv4FAAALQC9VUW+VH//7//8H//v6r0Gn19UfQAfT219tB9PXn29H09KuC9fT0v4C19PR+QBH0/r6QUfS//+C5+Wqr4PX+AALh9f+qpuL7+//64v+RVVbn2QABV+uAAAf/10AAAr5AC0BRkUBblbXngv/+euuC/+pq65Lq1f//4v/9a/5S7u5v/kLZn/rr4u7v4eGi//5RlkLlZLVfQui0vr/i7bnvb5Lv/9qbQ+66/ttHrbV+75eu+n3/66/+uF+bbbrgC0EAAoAKAAGQB0AAVuVblQL/////gr////6AAuALgAar+q/qm//////mqqvqqpAaq+qpAL////4AvqvqvgC9W+VuAL////4AvVvlbgC+q+q+AL////4AG+Vb6QFv0Av+S/5AAa/r5AAABpC////+Qf////9B9ufm70H259ffQfH3199B9ffbn0H/////QL////9AVVflVQGqr/qqQf////+BVVflVUf/////5//////gVWVZVUC0eC4fQfR4Lh+H4HwvB+uQfB4C1kAUBQBBWqQVVAv/+b/+D+qRv/9PlVBVb0//9f//T+qlqq9PlVVVb0//////RqqqqqkKaRqkKA+/n/59D1vvW70PVV5BfQ++H7k9n2+fv23vRp4abu9GXwZu7/+fr6/v+l/+X+qQGpAGkACkCkAAAfQf4AAB9Av5Bqr6qv6f/////+qr/v6qoAH0pAAAAfT4BQAC4PgvAALg+H4AB9D5/QAL0Pr0AA+A/9AAH0H/QuB+G/0C4L6/+ALi+/74Auvmpf5b74AAv//aQABv/kAC0AAAAAf///QAG///9AAvVVvgAL4AH5AG/+r/6gv/////S/Vb1V9B9AuAH0H6r+qvQf////9B+VvVX0H0B4APQflb5W9B/////0Cqr/qq4AALgAHwAAfVVuAAB///0AABv/5A==","words":[{"name":"热情","id":10001,"quality":1,"kind":"exclude"},{"name":"勇敢","id":10002,"quality":1,"kind":"exclude"},{"name":"温和","id":10003,"quality":1,"kind":"exclude"},{"name":"谨慎","id":10004,"quality":1,"kind":"exclude"},{"name":"稳重","id":10005,"quality":1,"kind":"exclude"},{"name":"急躁","id":10006,"quality":1,"kind":"exclude"},{"name":"憨厚","id":10007,"quality":1,"kind":"exclude"},{"name":"热情似火","id":10201,"quality":2,"kind":"exclude"},{"name":"勇敢牛牛","id":10202,"quality":2,"kind":"exclude"},{"name":"温和似水","id":10203,"quality":2,"kind":"exclude"},{"name":"谨慎如鼠","id":10204,"quality":2,"kind":"exclude"},{"name":"稳重如龟","id":10205,"quality":2,"kind":"exclude"},{"name":"急躁如虎","id":10206,"quality":2,"kind":"exclude"},{"name":"憨厚似土","id":10207,"quality":2,"kind":"exclude"},{"name":"热血沸腾","id":10301,"quality":3,"kind":"exclude"},{"name":"无所畏惧","id":10302,"quality":3,"kind":"exclude"},{"name":"温文尔雅","id":10303,"quality":3,"kind":"exclude"},{"name":"小心翼翼","id":10304,"quality":3,"kind":"exclude"},{"name":"从容不迫","id":10305,"quality":3,"kind":"exclude"},{"name":"飞扬跋扈","id":10306,"quality":3,"kind":"exclude"},{"name":"厚实沉稳","id":10307,"quality":3,"kind":"exclude"},{"name":"赤胆忠心","id":10401,"quality":4,"kind":"exclude"},{"name":"勇往直前","id":10402,"quality":4,"kind":"exclude"},{"name":"厚德载物","id":10403,"quality":4,"kind":"exclude"},{"name":"谨小慎微","id":10404,"quality":4,"kind":"exclude"},{"name":"处变不惊","id":10405,"quality":4,"kind":"exclude"},{"name":"一往无前","id":10406,"quality":4,"kind":"exclude"},{"name":"稳如泰山","id":10407,"quality":4,"kind":"exclude"},{"name":"火金灵体","id":11001,"quality":2,"kind":"exclude"},{"name":"土火灵体","id":11002,"quality":2,"kind":"exclude"},{"name":"木土灵体","id":11003,"quality":2,"kind":"exclude"},{"name":"金雷灵体","id":11004,"quality":2,"kind":"exclude"},{"name":"雷水灵体","id":11005,"quality":2,"kind":"exclude"},{"name":"天火圣体","id":11006,"quality":3,"kind":"exclude"},{"name":"天土圣体","id":11007,"quality":3,"kind":"exclude"},{"name":"天金圣体","id":11008,"quality":3,"kind":"exclude"},{"name":"天水圣体","id":11009,"quality":3,"kind":"exclude"},{"name":"天木圣体","id":11010,"quality":3,"kind":"exclude"},{"name":"金道胎","id":11011,"quality":4,"kind":"exclude"},{"name":"木道胎","id":11012,"quality":4,"kind":"exclude"},{"name":"水道胎","id":11013,"quality":4,"kind":"exclude"},{"name":"火道胎","id":11014,"quality":4,"kind":"exclude"},{"name":"土道胎","id":11015,"quality":4,"kind":"exclude"},{"name":"雷道胎","id":11016,"quality":4,"kind":"exclude"},{"name":"天雷圣体","id":11017,"quality":3,"kind":"exclude"},{"name":"水木灵体","id":11018,"quality":2,"kind":"exclude"},{"name":"金灵体","id":11019,"quality":1,"kind":"exclude"},{"name":"木灵体","id":11020,"quality":1,"kind":"exclude"},{"name":"水灵体","id":11021,"quality":1,"kind":"exclude"},{"name":"火灵体","id":11022,"quality":1,"kind":"exclude"},{"name":"土灵体","id":11023,"quality":1,"kind":"exclude"},{"name":"雷灵体","id":11024,"quality":1,"kind":"exclude"},{"name":"离火化身","id":11025,"quality":3,"kind":"exclude"},{"name":"莲花化神","id":11026,"quality":4,"kind":"exclude"},{"name":"邪灵体","id":11101,"quality":1,"kind":"exclude"},{"name":"体灵体","id":11102,"quality":1,"kind":"exclude"},{"name":"邪火灵体","id":11201,"quality":2,"kind":"exclude"},{"name":"体木灵体","id":11202,"quality":2,"kind":"exclude"},{"name":"玄金灵体","id":11203,"quality":2,"kind":"exclude"},{"name":"玄木灵体","id":11204,"quality":2,"kind":"exclude"},{"name":"玄水灵体","id":11205,"quality":2,"kind":"exclude"},{"name":"玄火灵体","id":11206,"quality":2,"kind":"exclude"},{"name":"玄土灵体","id":11207,"quality":2,"kind":"exclude"},{"name":"玄雷灵体","id":11208,"quality":2,"kind":"exclude"},{"name":"玄邪灵体","id":11209,"quality":2,"kind":"exclude"},{"name":"玄体灵体","id":11210,"quality":2,"kind":"exclude"},{"name":"天邪圣体","id":11301,"quality":3,"kind":"exclude"},{"name":"天体圣体","id":11302,"quality":3,"kind":"exclude"},{"name":"雷元圣体","id":11303,"quality":3,"kind":"exclude"},{"name":"覆水圣体","id":11304,"quality":3,"kind":"exclude"},{"name":"青木圣体","id":11305,"quality":3,"kind":"exclude"},{"name":"金锋圣体","id":11306,"quality":3,"kind":"exclude"},{"name":"厚土圣体","id":11307,"quality":3,"kind":"exclude"},{"name":"魔罗圣体","id":11308,"quality":3,"kind":"exclude"},{"name":"玄元圣体","id":11309,"quality":3,"kind":"exclude"},{"name":"劫火圣体","id":11310,"quality":3,"kind":"exclude"},{"name":"邪道胎","id":11401,"quality":4,"kind":"exclude"},{"name":"体道胎","id":11402,"quality":4,"kind":"exclude"},{"name":"阳雷灌顶","id":11403,"quality":4,"kind":"exclude"},{"name":"善水朝元","id":11404,"quality":4,"kind":"exclude"},{"name":"万木化神","id":11405,"quality":4,"kind":"exclude"},{"name":"金刚化神","id":11406,"quality":4,"kind":"exclude"},{"name":"镇岳化神","id":11407,"quality":4,"kind":"exclude"},{"name":"修罗化神","id":11408,"quality":4,"kind":"exclude"},{"name":"混元化神","id":11409,"quality":4,"kind":"exclude"},{"name":"焚罪化身","id":11410,"quality":4,"kind":"exclude"},{"name":"从小爱剑","id":12001,"quality":1,"kind":"innate"},{"name":"从小爱枪","id":12002,"quality":1,"kind":"innate"},{"name":"异宝品鉴","id":12003,"quality":1,"kind":"innate"},{"name":"精通乐理","id":12004,"quality":1,"kind":"innate"},{"name":"醉心防御","id":12005,"quality":1,"kind":"innate"},{"name":"剑痴","id":12006,"quality":2,"kind":"innate"},{"name":"枪痴","id":12007,"quality":2,"kind":"innate"},{"name":"异痴","id":12008,"quality":2,"kind":"innate"},{"name":"乐痴","id":12009,"quality":2,"kind":"innate"},{"name":"御痴","id":12010,"quality":2,"kind":"innate"},{"name":"剑仙转世","id":12011,"quality":3,"kind":"innate"},{"name":"枪仙转世","id":12012,"quality":3,"kind":"innate"},{"name":"异仙转世","id":12013,"quality":3,"kind":"innate"},{"name":"乐仙转世","id":12014,"quality":3,"kind":"innate"},{"name":"御仙转世","id":12015,"quality":3,"kind":"innate"},{"name":"全能大师","id":12016,"quality":4,"kind":"innate"},{"name":"天生爱幡","id":12017,"quality":1,"kind":"innate"},{"name":"碧血映川","id":12018,"quality":4,"kind":"innate"},{"name":"丹心照夜","id":12019,"quality":4,"kind":"innate"},{"name":"全抗大师","id":12020,"quality":4,"kind":"innate"},{"name":"天生爱刀","id":12101,"quality":1,"kind":"innate"},{"name":"天生爱锤","id":12102,"quality":1,"kind":"innate"},{"name":"闯关利刃","id":12103,"quality":2,"kind":"innate"},{"name":"闯关铁壁","id":12104,"quality":2,"kind":"innate"},{"name":"竞技利刃","id":12105,"quality":2,"kind":"innate"},{"name":"竞技铁壁","id":12106,"quality":2,"kind":"innate"},{"name":"游历利刃","id":12107,"quality":2,"kind":"innate"},{"name":"游历铁壁","id":12108,"quality":2,"kind":"innate"},{"name":"摸石熟手","id":12109,"quality":2,"kind":"innate"},{"name":"摸玉熟手","id":12110,"quality":2,"kind":"innate"},{"name":"摸矿熟手","id":12111,"quality":2,"kind":"innate"},{"name":"摸钱熟手","id":12112,"quality":2,"kind":"innate"},{"name":"种植熟手","id":12113,"quality":2,"kind":"innate"},{"name":"小偷小摸","id":12114,"quality":2,"kind":"innate"},{"name":"夺石小兵","id":12115,"quality":2,"kind":"innate"},{"name":"夺矿小兵","id":12116,"quality":2,"kind":"innate"},{"name":"商业奇才","id":12117,"quality":2,"kind":"innate"},{"name":"幡痴","id":12118,"quality":2,"kind":"innate"},{"name":"刀痴","id":12201,"quality":2,"kind":"innate"},{"name":"锤痴","id":12202,"quality":2,"kind":"innate"},{"name":"闯关玄刃","id":12203,"quality":3,"kind":"innate"},{"name":"闯关玄壁","id":12204,"quality":3,"kind":"innate"},{"name":"竞技玄刃","id":12205,"quality":3,"kind":"innate"},{"name":"竞技玄壁","id":12206,"quality":3,"kind":"innate"},{"name":"威慑四方","id":12207,"quality":3,"kind":"innate"},{"name":"稳扎稳打","id":12208,"quality":3,"kind":"innate"},{"name":"摸石高手","id":12209,"quality":3,"kind":"innate"},{"name":"摸玉高手","id":12210,"quality":3,"kind":"innate"},{"name":"摸矿高手","id":12211,"quality":3,"kind":"innate"},{"name":"摸钱高手","id":12212,"quality":3,"kind":"innate"},{"name":"种植高手","id":12213,"quality":3,"kind":"innate"},{"name":"大偷大摸","id":12214,"quality":3,"kind":"innate"},{"name":"夺石大兵","id":12215,"quality":3,"kind":"innate"},{"name":"夺矿大兵","id":12216,"quality":3,"kind":"innate"},{"name":"商业天才","id":12217,"quality":3,"kind":"innate"},{"name":"幡仙转世","id":12218,"quality":3,"kind":"innate"},{"name":"枯荣传承","id":12219,"quality":3,"kind":"innate"},{"name":"锐金传承","id":12220,"quality":3,"kind":"innate"},{"name":"磐地传承","id":12221,"quality":3,"kind":"innate"},{"name":"蜚廉传承","id":12222,"quality":3,"kind":"innate"},{"name":"鸿蒙传承","id":12223,"quality":3,"kind":"innate"},{"name":"劫麟传承","id":12224,"quality":3,"kind":"innate"},{"name":"刀仙转世","id":12301,"quality":3,"kind":"innate"},{"name":"锤仙转世","id":12302,"quality":3,"kind":"innate"},{"name":"闯关圣刃","id":12303,"quality":4,"kind":"innate"},{"name":"闯关圣壁","id":12304,"quality":4,"kind":"innate"},{"name":"竞技圣刃","id":12305,"quality":4,"kind":"innate"},{"name":"竞技圣壁","id":12306,"quality":4,"kind":"innate"},{"name":"战无不胜","id":12307,"quality":4,"kind":"innate"},{"name":"不动如山","id":12308,"quality":4,"kind":"innate"},{"name":"摸石校尉","id":12309,"quality":4,"kind":"innate"},{"name":"摸玉校尉","id":12310,"quality":4,"kind":"innate"},{"name":"摸矿校尉","id":12311,"quality":4,"kind":"innate"},{"name":"摸钱校尉","id":12312,"quality":4,"kind":"innate"},{"name":"种植圣手","id":12313,"quality":4,"kind":"innate"},{"name":"再世盗圣","id":12314,"quality":4,"kind":"innate"},{"name":"夺石奇兵","id":12315,"quality":4,"kind":"innate"},{"name":"夺矿奇兵","id":12316,"quality":4,"kind":"innate"},{"name":"离火化身(废弃)","id":12317,"quality":4,"kind":"innate"},{"name":"离火传承","id":12318,"quality":3,"kind":"innate"},{"name":"雷部真传","id":12319,"quality":3,"kind":"innate"},{"name":"柔水克刚","id":12320,"quality":3,"kind":"innate"},{"name":"商业鬼才","id":12321,"quality":4,"kind":"innate"},{"name":"莲花化身(废弃)","id":12401,"quality":4,"kind":"innate"},{"name":"灵珠转世","id":12402,"quality":4,"kind":"innate"},{"name":"先天神雷","id":12403,"quality":4,"kind":"innate"},{"name":"共工赐福","id":12404,"quality":4,"kind":"innate"},{"name":"剑圣转世","id":12405,"quality":4,"kind":"innate"},{"name":"枪圣转世","id":12406,"quality":4,"kind":"innate"},{"name":"异圣转世","id":12407,"quality":4,"kind":"innate"},{"name":"乐圣转世","id":12408,"quality":4,"kind":"innate"},{"name":"御圣转世","id":12409,"quality":4,"kind":"innate"},{"name":"刀圣转世","id":12410,"quality":4,"kind":"innate"},{"name":"锤圣转世","id":12411,"quality":4,"kind":"innate"},{"name":"幡圣转世","id":12412,"quality":4,"kind":"innate"},{"name":"神木转世","id":12413,"quality":4,"kind":"innate"},{"name":"帝器转世","id":12414,"quality":4,"kind":"innate"},{"name":"土皇转世","id":12415,"quality":4,"kind":"innate"},{"name":"兵主转世","id":12416,"quality":4,"kind":"innate"},{"name":"天枢转世","id":12417,"quality":4,"kind":"innate"},{"name":"荧惑转世","id":12418,"quality":4,"kind":"innate"},{"name":"锋芒","id":20101,"quality":2,"kind":"exclude"},{"name":"锐意","id":20102,"quality":3,"kind":"exclude"},{"name":"怒魂","id":20103,"quality":5,"kind":"exclude"},{"name":"裂甲","id":20104,"quality":2,"kind":"exclude"},{"name":"趁虚","id":20105,"quality":3,"kind":"exclude"},{"name":"饮煞","id":20106,"quality":5,"kind":"exclude"},{"name":"无影","id":20201,"quality":2,"kind":"exclude"},{"name":"蛰伏","id":20202,"quality":3,"kind":"exclude"},{"name":"回春","id":20203,"quality":5,"kind":"exclude"},{"name":"侵蚀","id":20204,"quality":2,"kind":"exclude"},{"name":"烈毒","id":20205,"quality":3,"kind":"exclude"},{"name":"吸髓","id":20206,"quality":5,"kind":"exclude"},{"name":"潮反","id":20301,"quality":2,"kind":"exclude"},{"name":"汲取","id":20302,"quality":3,"kind":"exclude"},{"name":"守势","id":20303,"quality":5,"kind":"exclude"},{"name":"霜降","id":20304,"quality":2,"kind":"exclude"},{"name":"刺骨","id":20305,"quality":3,"kind":"exclude"},{"name":"寒流","id":20306,"quality":5,"kind":"exclude"},{"name":"炎舞","id":20401,"quality":2,"kind":"exclude"},{"name":"炽刃","id":20402,"quality":3,"kind":"exclude"},{"name":"狂热","id":20403,"quality":5,"kind":"exclude"},{"name":"灼击","id":20404,"quality":2,"kind":"exclude"},{"name":"流火","id":20405,"quality":3,"kind":"exclude"},{"name":"炎爆","id":20406,"quality":5,"kind":"exclude"},{"name":"千钧","id":20501,"quality":2,"kind":"exclude"},{"name":"崩斧","id":20502,"quality":3,"kind":"exclude"},{"name":"撼锤","id":20503,"quality":5,"kind":"exclude"},{"name":"龟息","id":20504,"quality":2,"kind":"exclude"},{"name":"磐石","id":20505,"quality":3,"kind":"exclude"},{"name":"山崩","id":20506,"quality":5,"kind":"exclude"},{"name":"感电","id":20601,"quality":2,"kind":"exclude"},{"name":"雷伐","id":20602,"quality":3,"kind":"exclude"},{"name":"天诏","id":20603,"quality":5,"kind":"exclude"},{"name":"余震","id":20604,"quality":2,"kind":"exclude"},{"name":"积雷","id":20605,"quality":5,"kind":"exclude"},{"name":"震慑","id":20606,"quality":3,"kind":"exclude"},{"name":"豪情","id":30101,"quality":2,"kind":"exclude"},{"name":"饮血","id":30102,"quality":3,"kind":"exclude"},{"name":"殒命","id":30103,"quality":5,"kind":"exclude"},{"name":"剑意","id":30201,"quality":2,"kind":"exclude"},{"name":"剑心","id":30202,"quality":3,"kind":"exclude"},{"name":"剑势","id":30203,"quality":5,"kind":"exclude"},{"name":"乐涌","id":30301,"quality":2,"kind":"exclude"},{"name":"咏殇","id":30302,"quality":3,"kind":"exclude"},{"name":"喧天","id":30303,"quality":5,"kind":"exclude"},{"name":"润物","id":30401,"quality":2,"kind":"exclude"},{"name":"聚势","id":30402,"quality":3,"kind":"exclude"},{"name":"混元","id":30403,"quality":5,"kind":"exclude"},{"name":"玄甲","id":30501,"quality":2,"kind":"exclude"},{"name":"固本","id":30502,"quality":3,"kind":"exclude"},{"name":"天罡","id":30503,"quality":5,"kind":"exclude"},{"name":"蓄意","id":30701,"quality":2,"kind":"exclude"},{"name":"斩命","id":30702,"quality":3,"kind":"exclude"},{"name":"真形","id":30703,"quality":5,"kind":"exclude"},{"name":"积势","id":30801,"quality":2,"kind":"exclude"},{"name":"崩裂","id":30802,"quality":3,"kind":"exclude"},{"name":"护身","id":30803,"quality":5,"kind":"exclude"},{"name":"招魂","id":30901,"quality":2,"kind":"exclude"},{"name":"倾泻","id":30902,"quality":3,"kind":"exclude"},{"name":"循环","id":30903,"quality":5,"kind":"exclude"},{"name":"斗势","id":31001,"quality":5,"kind":"exclude"},{"name":"噬命","id":20107,"quality":2,"kind":"exclude"},{"name":"殒锋","id":20108,"quality":3,"kind":"exclude"},{"name":"凝罡","id":20109,"quality":5,"kind":"exclude"},{"name":"生机","id":20207,"quality":2,"kind":"exclude"},{"name":"韧性","id":20208,"quality":3,"kind":"exclude"},{"name":"进化","id":20209,"quality":5,"kind":"exclude"},{"name":"封冻","id":20307,"quality":2,"kind":"exclude"},{"name":"朔风","id":20308,"quality":3,"kind":"exclude"},{"name":"凌厉","id":20309,"quality":5,"kind":"exclude"},{"name":"祭生","id":20407,"quality":2,"kind":"exclude"},{"name":"浴火","id":20408,"quality":3,"kind":"exclude"},{"name":"燃尽","id":20409,"quality":5,"kind":"exclude"},{"name":"排山","id":20507,"quality":2,"kind":"exclude"},{"name":"破壁","id":20508,"quality":3,"kind":"exclude"},{"name":"碎脉","id":20509,"quality":5,"kind":"exclude"},{"name":"雷相","id":20607,"quality":2,"kind":"exclude"},{"name":"天威","id":20608,"quality":3,"kind":"exclude"},{"name":"裁决","id":20609,"quality":5,"kind":"exclude"},{"name":"血怒","id":20701,"quality":2,"kind":"exclude"},{"name":"祭愈","id":20702,"quality":3,"kind":"exclude"},{"name":"昭命","id":20703,"quality":5,"kind":"exclude"},{"name":"猎魇","id":20704,"quality":2,"kind":"exclude"},{"name":"涤煞","id":20705,"quality":3,"kind":"exclude"},{"name":"舍魄","id":20706,"quality":5,"kind":"exclude"},{"name":"炼魂","id":20707,"quality":2,"kind":"exclude"},{"name":"狂躁","id":20708,"quality":3,"kind":"exclude"},{"name":"增生","id":20709,"quality":5,"kind":"exclude"},{"name":"炼体","id":20801,"quality":2,"kind":"exclude"},{"name":"强健","id":20802,"quality":3,"kind":"exclude"},{"name":"极限","id":20803,"quality":5,"kind":"exclude"},{"name":"金身","id":20804,"quality":2,"kind":"exclude"},{"name":"庇护","id":20805,"quality":3,"kind":"exclude"},{"name":"化身","id":20806,"quality":5,"kind":"exclude"},{"name":"觉醒","id":20807,"quality":2,"kind":"exclude"},{"name":"吸引","id":20808,"quality":5,"kind":"exclude"},{"name":"贯通","id":20809,"quality":3,"kind":"exclude"},{"name":"五金店员","id":101001,"quality":2,"kind":"acquired"},{"name":"好战分子","id":101002,"quality":3,"kind":"acquired"},{"name":"背后捅刀","id":101003,"quality":3,"kind":"acquired"},{"name":"富家子弟","id":101004,"quality":3,"kind":"acquired"},{"name":"暗榜刺客","id":101005,"quality":4,"kind":"acquired"},{"name":"破甲兵王","id":101006,"quality":4,"kind":"acquired"},{"name":"黄金斗士","id":101007,"quality":4,"kind":"acquired"},{"name":"捣药童子","id":102001,"quality":2,"kind":"acquired"},{"name":"不倒药翁","id":102002,"quality":3,"kind":"acquired"},{"name":"炼蛊术士","id":102003,"quality":3,"kind":"acquired"},{"name":"锄禾老农","id":102004,"quality":3,"kind":"acquired"},{"name":"药王传人","id":102005,"quality":4,"kind":"acquired"},{"name":"绝命毒师","id":102006,"quality":4,"kind":"acquired"},{"name":"再世神农","id":102007,"quality":4,"kind":"acquired"},{"name":"浪里白条","id":103001,"quality":2,"kind":"acquired"},{"name":"灌水狂徒","id":103002,"quality":3,"kind":"acquired"},{"name":"问斧河伯","id":103003,"quality":3,"kind":"acquired"},{"name":"澡堂宗师","id":103004,"quality":3,"kind":"acquired"},{"name":"海军大将","id":103005,"quality":4,"kind":"acquired"},{"name":"千年玄武","id":103006,"quality":4,"kind":"acquired"},{"name":"归位龙王","id":103007,"quality":4,"kind":"acquired"},{"name":"鬼火少年","id":104001,"quality":2,"kind":"acquired"},{"name":"夜市烤官","id":104002,"quality":3,"kind":"acquired"},{"name":"爆破鬼才","id":104003,"quality":3,"kind":"acquired"},{"name":"火钳流民","id":104004,"quality":3,"kind":"acquired"},{"name":"火锅英雄","id":104005,"quality":4,"kind":"acquired"},{"name":"侥幸焚帝","id":104006,"quality":4,"kind":"acquired"},{"name":"火云邪神","id":104007,"quality":4,"kind":"acquired"},{"name":"泥地打滚","id":105001,"quality":2,"kind":"acquired"},{"name":"搬砖师傅","id":105002,"quality":3,"kind":"acquired"},{"name":"拆迁队长","id":105003,"quality":3,"kind":"acquired"},{"name":"河坝监工","id":105004,"quality":3,"kind":"acquired"},{"name":"土木教授","id":105005,"quality":4,"kind":"acquired"},{"name":"地产大鳄","id":105006,"quality":4,"kind":"acquired"},{"name":"基建狂魔","id":105007,"quality":4,"kind":"acquired"},{"name":"见习电工","id":106001,"quality":2,"kind":"acquired"},{"name":"超载焊工","id":106002,"quality":3,"kind":"acquired"},{"name":"阴雷老道","id":106003,"quality":3,"kind":"acquired"},{"name":"浑元雷师","id":106004,"quality":3,"kind":"acquired"},{"name":"十万伏特","id":106005,"quality":4,"kind":"acquired"},{"name":"线圈狂人","id":106006,"quality":4,"kind":"acquired"},{"name":"雷电法王","id":106007,"quality":4,"kind":"acquired"},{"name":"反派路人","id":107001,"quality":2,"kind":"acquired"},{"name":"吸血黄牛","id":107002,"quality":3,"kind":"acquired"},{"name":"双花红棍","id":107003,"quality":3,"kind":"acquired"},{"name":"魔教护法","id":107004,"quality":3,"kind":"acquired"},{"name":"黑市庄家","id":107005,"quality":4,"kind":"acquired"},{"name":"极道教父","id":107006,"quality":4,"kind":"acquired"},{"name":"混世魔王","id":107007,"quality":4,"kind":"acquired"},{"name":"体育委员","id":108001,"quality":2,"kind":"acquired"},{"name":"贴身保镖","id":108002,"quality":3,"kind":"acquired"},{"name":"气功大师","id":108003,"quality":3,"kind":"acquired"},{"name":"健美先生","id":108004,"quality":3,"kind":"acquired"},{"name":"大力水手","id":108005,"quality":4,"kind":"acquired"},{"name":"罗汉金刚","id":108006,"quality":4,"kind":"acquired"},{"name":"肉身成圣","id":108007,"quality":4,"kind":"acquired"},{"name":"剑窍","id":202001,"quality":2,"kind":"acquired"},{"name":"剑道果","id":202002,"quality":3,"kind":"acquired"},{"name":"白虹剑胎","id":202003,"quality":3,"kind":"acquired"},{"name":"青竹剑胎","id":202004,"quality":3,"kind":"acquired"},{"name":"剑心通明","id":202005,"quality":4,"kind":"acquired"},{"name":"誓约神剑","id":202006,"quality":4,"kind":"acquired"},{"name":"剑道灵种","id":202007,"quality":4,"kind":"acquired"},{"name":"乐窍","id":203001,"quality":2,"kind":"acquired"},{"name":"乐道果","id":203002,"quality":3,"kind":"acquired"},{"name":"惊鸿乐胎","id":203003,"quality":3,"kind":"acquired"},{"name":"漱玉乐胎","id":203004,"quality":3,"kind":"acquired"},{"name":"音心化境","id":203005,"quality":4,"kind":"acquired"},{"name":"大音希声","id":203006,"quality":4,"kind":"acquired"},{"name":"乐道灵种","id":203007,"quality":4,"kind":"acquired"},{"name":"异窍","id":204001,"quality":2,"kind":"acquired"},{"name":"异道果","id":204002,"quality":3,"kind":"acquired"},{"name":"千机异胎","id":204003,"quality":3,"kind":"acquired"},{"name":"衔珠异胎","id":204004,"quality":3,"kind":"acquired"},{"name":"异宝千机","id":204005,"quality":4,"kind":"acquired"},{"name":"变形金刚","id":204006,"quality":4,"kind":"acquired"},{"name":"异道灵种","id":204007,"quality":4,"kind":"acquired"},{"name":"御窍","id":205001,"quality":2,"kind":"acquired"},{"name":"御道果","id":205002,"quality":3,"kind":"acquired"},{"name":"天衣御胎","id":205003,"quality":3,"kind":"acquired"},{"name":"逆鳞御胎","id":205004,"quality":3,"kind":"acquired"},{"name":"御心守一","id":205005,"quality":4,"kind":"acquired"},{"name":"不动如山","id":205006,"quality":4,"kind":"acquired"},{"name":"御道灵种","id":205007,"quality":4,"kind":"acquired"},{"name":"枪窍","id":206001,"quality":2,"kind":"acquired"},{"name":"枪道果","id":206002,"quality":3,"kind":"acquired"},{"name":"霸王枪胎","id":206003,"quality":3,"kind":"acquired"},{"name":"沥泉枪胎","id":206004,"quality":3,"kind":"acquired"},{"name":"枪意凌虚","id":206005,"quality":4,"kind":"acquired"},{"name":"天翔龙闪","id":206006,"quality":4,"kind":"acquired"},{"name":"枪道灵种","id":206007,"quality":4,"kind":"acquired"},{"name":"刀窍","id":207001,"quality":2,"kind":"acquired"},{"name":"刀道果","id":207002,"quality":3,"kind":"acquired"},{"name":"偃月刀胎","id":207003,"quality":3,"kind":"acquired"},{"name":"雪饮刀胎","id":207004,"quality":3,"kind":"acquired"},{"name":"刀意归藏","id":207005,"quality":4,"kind":"acquired"},{"name":"屠龙刀尊","id":207006,"quality":4,"kind":"acquired"},{"name":"刀道灵种","id":207007,"quality":4,"kind":"acquired"},{"name":"锤窍","id":208001,"quality":2,"kind":"acquired"},{"name":"锤道果","id":208002,"quality":3,"kind":"acquired"},{"name":"博浪锤胎","id":208003,"quality":3,"kind":"acquired"},{"name":"雷公锤胎","id":208004,"quality":3,"kind":"acquired"},{"name":"锤魂撼岳","id":208005,"quality":4,"kind":"acquired"},{"name":"帝皇战锤","id":208006,"quality":4,"kind":"acquired"},{"name":"锤道灵种","id":208007,"quality":4,"kind":"acquired"},{"name":"幡窍","id":209001,"quality":2,"kind":"acquired"},{"name":"幡道果","id":209002,"quality":3,"kind":"acquired"},{"name":"垂云幡胎","id":209003,"quality":3,"kind":"acquired"},{"name":"招魂幡胎","id":209004,"quality":3,"kind":"acquired"},{"name":"幡影通幽","id":209005,"quality":4,"kind":"acquired"},{"name":"尊魂血幡","id":209006,"quality":4,"kind":"acquired"},{"name":"幡道灵种","id":209007,"quality":4,"kind":"acquired"},{"name":"刀剑小成","id":301001,"quality":2,"kind":"acquired"},{"name":"枪剑小成","id":301002,"quality":2,"kind":"acquired"},{"name":"刀枪小成","id":301003,"quality":2,"kind":"acquired"},{"name":"剑乐小成","id":301004,"quality":2,"kind":"acquired"},{"name":"剑异小成","id":301005,"quality":2,"kind":"acquired"},{"name":"乐异小成","id":301006,"quality":2,"kind":"acquired"},{"name":"剑御小成","id":301007,"quality":2,"kind":"acquired"},{"name":"剑锤小成","id":301008,"quality":2,"kind":"acquired"},{"name":"御锤小成","id":301009,"quality":2,"kind":"acquired"},{"name":"刀乐小成","id":301010,"quality":2,"kind":"acquired"},{"name":"刀异小成","id":301011,"quality":2,"kind":"acquired"},{"name":"御幡小成","id":301014,"quality":2,"kind":"acquired"},{"name":"锤幡小成","id":301015,"quality":2,"kind":"acquired"},{"name":"枪幡小成","id":301016,"quality":2,"kind":"acquired"},{"name":"枪乐小成","id":301017,"quality":2,"kind":"acquired"},{"name":"乐幡小成","id":301018,"quality":2,"kind":"acquired"},{"name":"刀幡小成","id":301020,"quality":2,"kind":"acquired"},{"name":"御异小成","id":301023,"quality":2,"kind":"acquired"},{"name":"锤异小成","id":301024,"quality":2,"kind":"acquired"},{"name":"刀剑双绝","id":302001,"quality":3,"kind":"acquired"},{"name":"枪剑双绝","id":302002,"quality":3,"kind":"acquired"},{"name":"刀枪双绝","id":302003,"quality":3,"kind":"acquired"},{"name":"剑乐双绝","id":302004,"quality":3,"kind":"acquired"},{"name":"剑异双绝","id":302005,"quality":3,"kind":"acquired"},{"name":"乐异双绝","id":302006,"quality":3,"kind":"acquired"},{"name":"剑御双绝","id":302007,"quality":3,"kind":"acquired"},{"name":"剑锤双绝","id":302008,"quality":3,"kind":"acquired"},{"name":"御锤双绝","id":302009,"quality":3,"kind":"acquired"},{"name":"刀乐双绝","id":302010,"quality":3,"kind":"acquired"},{"name":"刀异双绝","id":302011,"quality":3,"kind":"acquired"},{"name":"御幡双绝","id":302014,"quality":3,"kind":"acquired"},{"name":"锤幡双绝","id":302015,"quality":3,"kind":"acquired"},{"name":"枪幡双绝","id":302016,"quality":3,"kind":"acquired"},{"name":"枪乐双绝","id":302017,"quality":3,"kind":"acquired"},{"name":"幡乐双绝","id":302018,"quality":3,"kind":"acquired"},{"name":"刀幡双绝","id":302020,"quality":3,"kind":"acquired"},{"name":"御异双绝","id":302023,"quality":3,"kind":"acquired"},{"name":"锤异双绝","id":302024,"quality":3,"kind":"acquired"},{"name":"刀剑通神","id":303001,"quality":4,"kind":"acquired"},{"name":"枪剑通神","id":303002,"quality":4,"kind":"acquired"},{"name":"刀枪通神","id":303003,"quality":4,"kind":"acquired"},{"name":"剑乐通神","id":303004,"quality":4,"kind":"acquired"},{"name":"剑异通神","id":303005,"quality":4,"kind":"acquired"},{"name":"乐异通神","id":303006,"quality":4,"kind":"acquired"},{"name":"剑御通神","id":303007,"quality":4,"kind":"acquired"},{"name":"剑锤通神","id":303008,"quality":4,"kind":"acquired"},{"name":"御锤通神","id":303009,"quality":4,"kind":"acquired"},{"name":"刀乐通神","id":303010,"quality":4,"kind":"acquired"},{"name":"刀异通神","id":303011,"quality":4,"kind":"acquired"},{"name":"御幡通神","id":303012,"quality":4,"kind":"acquired"},{"name":"锤幡通神","id":303013,"quality":4,"kind":"acquired"},{"name":"枪幡通神","id":303014,"quality":4,"kind":"acquired"},{"name":"枪乐通神","id":303015,"quality":4,"kind":"acquired"},{"name":"乐幡通神","id":303016,"quality":4,"kind":"acquired"},{"name":"刀幡通神","id":303017,"quality":4,"kind":"acquired"},{"name":"御异通神","id":303018,"quality":4,"kind":"acquired"},{"name":"锤异通神","id":303019,"quality":4,"kind":"acquired"},{"name":"鸣剑饮刀","id":303101,"quality":4,"kind":"acquired"},{"name":"金戈剑胆","id":303102,"quality":4,"kind":"acquired"},{"name":"铩刃金枪","id":303103,"quality":4,"kind":"acquired"},{"name":"刃影毒香","id":303104,"quality":4,"kind":"acquired"},{"name":"青芒枯荣","id":303105,"quality":4,"kind":"acquired"},{"name":"森罗乐异","id":303106,"quality":4,"kind":"acquired"},{"name":"剑御潮生","id":303107,"quality":4,"kind":"acquired"},{"name":"沧刃玄锤","id":303108,"quality":4,"kind":"acquired"},{"name":"玄水御镇","id":303109,"quality":4,"kind":"acquired"},{"name":"烈刃琴心","id":303110,"quality":4,"kind":"acquired"},{"name":"焚锋疾异","id":303111,"quality":4,"kind":"acquired"},{"name":"炎律燎异","id":303112,"quality":4,"kind":"acquired"},{"name":"磐石御锤","id":303113,"quality":4,"kind":"acquired"},{"name":"泰御灵幡","id":303114,"quality":4,"kind":"acquired"},{"name":"锤幡定岳","id":303115,"quality":4,"kind":"acquired"},{"name":"雷锋怒幡","id":303116,"quality":4,"kind":"acquired"},{"name":"霆律惊戈","id":303117,"quality":4,"kind":"acquired"},{"name":"雷铎神幡","id":303118,"quality":4,"kind":"acquired"},{"name":"裂魂刀枪","id":303119,"quality":4,"kind":"acquired"},{"name":"邪刃魔幡","id":303120,"quality":4,"kind":"acquired"},{"name":"冥枪诡旗","id":303121,"quality":4,"kind":"acquired"},{"name":"百御千锤","id":303122,"quality":4,"kind":"acquired"},{"name":"金刚御异","id":303123,"quality":4,"kind":"acquired"},{"name":"无相撼异","id":303124,"quality":4,"kind":"acquired"},{"id":101002,"name":"锐锋骨","quality":3,"kind":"acquired"},{"id":101003,"name":"金刑骨","quality":3,"kind":"acquired"},{"id":101004,"name":"金道基","quality":3,"kind":"acquired"},{"id":101005,"name":"锐金法身","quality":4,"kind":"acquired"},{"id":101006,"name":"监兵法身","quality":4,"kind":"acquired"},{"id":101007,"name":"庚金道体","quality":4,"kind":"acquired"},{"id":102001,"name":"乡野人家","quality":2,"kind":"acquired"},{"id":102002,"name":"长生骨","quality":3,"kind":"acquired"},{"id":102003,"name":"毒藤骨","quality":3,"kind":"acquired"},{"id":102004,"name":"木道基","quality":3,"kind":"acquired"},{"id":102005,"name":"青冥法身","quality":4,"kind":"acquired"},{"id":102006,"name":"森罗法身","quality":4,"kind":"acquired"},{"id":102007,"name":"甲木道体","quality":4,"kind":"acquired"},{"id":103002,"name":"流波骨","quality":3,"kind":"acquired"},{"id":103003,"name":"沧澜骨","quality":3,"kind":"acquired"},{"id":103004,"name":"水道基","quality":3,"kind":"acquired"},{"id":103005,"name":"壬水法身","quality":4,"kind":"acquired"},{"id":103006,"name":"玄冥法身","quality":4,"kind":"acquired"},{"id":103007,"name":"沧溟道体","quality":4,"kind":"acquired"},{"id":104002,"name":"焚心骨","quality":3,"kind":"acquired"},{"id":104003,"name":"烬灭骨","quality":3,"kind":"acquired"},{"id":104004,"name":"火道基","quality":3,"kind":"acquired"},{"id":104005,"name":"红莲法身","quality":4,"kind":"acquired"},{"id":104006,"name":"赤帝法身","quality":4,"kind":"acquired"},{"id":104007,"name":"丙火道体","quality":4,"kind":"acquired"},{"id":105002,"name":"戊土骨","quality":3,"kind":"acquired"},{"id":105003,"name":"磐石骨","quality":3,"kind":"acquired"},{"id":105004,"name":"土道基","quality":3,"kind":"acquired"},{"id":105005,"name":"镇岳法身","quality":4,"kind":"acquired"},{"id":105006,"name":"庚辰法身","quality":4,"kind":"acquired"},{"id":105007,"name":"坤元道体","quality":4,"kind":"acquired"},{"id":106001,"name":"见习雷工","quality":2,"kind":"acquired"},{"id":106002,"name":"阳雷骨","quality":3,"kind":"acquired"},{"id":106003,"name":"阴雷骨","quality":3,"kind":"acquired"},{"id":106004,"name":"雷道基","quality":3,"kind":"acquired"},{"id":106005,"name":"霹雳法身","quality":4,"kind":"acquired"},{"id":106006,"name":"景震法身","quality":4,"kind":"acquired"},{"id":106007,"name":"雷殛道体","quality":4,"kind":"acquired"},{"id":107002,"name":"摄魂骨","quality":3,"kind":"acquired"},{"id":107003,"name":"血煞骨","quality":3,"kind":"acquired"},{"id":107004,"name":"邪道基","quality":3,"kind":"acquired"},{"id":107005,"name":"噬魂法身","quality":4,"kind":"acquired"},{"id":107006,"name":"幽冥法身","quality":4,"kind":"acquired"},{"id":107007,"name":"血罗道体","quality":4,"kind":"acquired"},{"id":108002,"name":"天行骨","quality":3,"kind":"acquired"},{"id":108003,"name":"怒罡骨","quality":3,"kind":"acquired"},{"id":108004,"name":"体道基","quality":3,"kind":"acquired"},{"id":108005,"name":"琉璃法身","quality":4,"kind":"acquired"},{"id":108006,"name":"明王法身","quality":4,"kind":"acquired"},{"id":108007,"name":"乾元道体","quality":4,"kind":"acquired"},{"id":202002,"name":"剑道骨","quality":3,"kind":"acquired"},{"id":202004,"name":"青萝剑胎","quality":3,"kind":"acquired"},{"id":202006,"name":"剑意无双","quality":4,"kind":"acquired"},{"id":203002,"name":"乐道骨","quality":3,"kind":"acquired"},{"id":203005,"name":"乐心通明","quality":4,"kind":"acquired"},{"id":203006,"name":"乐意无双","quality":4,"kind":"acquired"},{"id":204002,"name":"异道骨","quality":3,"kind":"acquired"},{"id":204005,"name":"异心通明","quality":4,"kind":"acquired"},{"id":204006,"name":"异意无双","quality":4,"kind":"acquired"},{"id":205002,"name":"御道骨","quality":3,"kind":"acquired"},{"id":205005,"name":"御心通明","quality":4,"kind":"acquired"},{"id":205006,"name":"御意无双","quality":4,"kind":"acquired"},{"id":206002,"name":"枪道骨","quality":3,"kind":"acquired"},{"id":206005,"name":"枪心通明","quality":4,"kind":"acquired"},{"id":206006,"name":"枪意无双","quality":4,"kind":"acquired"},{"id":207002,"name":"刀道骨","quality":3,"kind":"acquired"},{"id":207003,"name":"龙雀刀胎","quality":3,"kind":"acquired"},{"id":207005,"name":"刀心通明","quality":4,"kind":"acquired"},{"id":207006,"name":"刀意无双","quality":4,"kind":"acquired"},{"id":208002,"name":"锤道骨","quality":3,"kind":"acquired"},{"id":208005,"name":"锤心通明","quality":4,"kind":"acquired"},{"id":208006,"name":"锤道无双","quality":4,"kind":"acquired"},{"id":209002,"name":"幡道骨","quality":3,"kind":"acquired"},{"id":209005,"name":"幡心通明","quality":4,"kind":"acquired"},{"id":209006,"name":"幡意无双","quality":4,"kind":"acquired"},{"id":301001,"name":"剑刀小成","quality":2,"kind":"acquired"},{"id":301002,"name":"剑枪小成","quality":2,"kind":"acquired"},{"id":301018,"name":"幡乐小成","quality":2,"kind":"acquired"},{"id":302001,"name":"剑刀双绝","quality":3,"kind":"acquired"},{"id":302002,"name":"剑枪双绝","quality":3,"kind":"acquired"},{"id":303001,"name":"剑刀通神","quality":4,"kind":"acquired"},{"id":303002,"name":"剑枪通神","quality":4,"kind":"acquired"},{"id":303016,"name":"幡乐通神","quality":4,"kind":"acquired"},{"name":"先天特性","id":-1,"quality":0,"kind":"exclude"},{"name":"后天仙缘","id":-2,"quality":0,"kind":"exclude"},{"name":"共鸣神通","id":-3,"quality":0,"kind":"exclude"},{"name":"弟子详情","id":-4,"quality":0,"kind":"exclude"},{"name":"仙缘不足","id":-5,"quality":0,"kind":"exclude"},{"name":"天赋不足","id":-6,"quality":0,"kind":"exclude"},{"name":"未获得","id":-7,"quality":0,"kind":"exclude"},{"name":"可替换","id":-8,"quality":0,"kind":"exclude"},{"name":"尚未获得","id":-9,"quality":0,"kind":"exclude"}]};
+let COMPILED_TALENT_GLYPHS = null;
+
+function getCompiledTalentGlyphs() {
+  if (!COMPILED_TALENT_GLYPHS && typeof LaozuTalentLiteCore !== 'undefined') {
+    COMPILED_TALENT_GLYPHS = LaozuTalentLiteCore.compile(TALENT_GLYPHS);
+  }
+  return COMPILED_TALENT_GLYPHS;
+}
+
+function recognizeTalentsFromImageData(rgbaData, width, height, innateDb, acquiredDb) {
+  try {
+    const segmenter = typeof LaozuTalentLiteSegmentation !== 'undefined' ? LaozuTalentLiteSegmentation : null;
+    const core = typeof LaozuTalentLiteCore !== 'undefined' ? LaozuTalentLiteCore : null;
+    if (!segmenter || !core) return { error: 'segmenter or core missing', segmenter: !!segmenter, core: !!core };
+
+    const compiled = getCompiledTalentGlyphs();
+    if (!compiled) return { error: 'compiled missing' };
+
+    const image = { width, height, data: rgbaData };
+    const segmentation = segmenter.segment(image);
+    if (!segmentation || !segmentation.badges || segmentation.badges.length === 0) return { error: 'no badges' };
+
+    const rec = core.recognize(image, segmentation, compiled);
+    if (!rec) return { error: 'recognition failed' };
+
+    const innateMap = new Map((innateDb || []).map(t => [t.id, t]));
+    const innateNameMap = new Map((innateDb || []).map(t => [t.name, t]));
+    const acMap = new Map((acquiredDb || []).map(t => [t.id, t]));
+    const acNameMap = new Map((acquiredDb || []).map(t => [t.name, t]));
+
+    const allInnate = [];
+    const allAcquired = [];
+
+    for (const m of rec.matches || []) {
+      if (m.kind === 'innate') allInnate.push({ order: m.order, id: m.id, name: m.name });
+      if (m.kind === 'acquired') allAcquired.push({ order: m.order, id: m.id, name: m.name });
+    }
+
+    for (const u of rec.unresolved || []) {
+      if (u.mayBeNonTalent) continue;
+      const top = u.candidates?.[0];
+      if (top) {
+        if (u.kind === 'innate') allInnate.push({ order: u.order, id: top.id, name: top.name });
+        if (u.kind === 'acquired') allAcquired.push({ order: u.order, id: top.id, name: top.name });
+      }
+    }
+
+    allInnate.sort((a, b) => a.order - b.order);
+    allAcquired.sort((a, b) => a.order - b.order);
+
+    const innatePicks = [0, 0, 0, 0];
+    const acquiredPicks = [0, 0, 0, 0];
+    const innateNames = [];
+    const acquiredNames = [];
+
+    let inIdx = 0;
+    for (const item of allInnate) {
+      const match = innateMap.get(item.id) || innateNameMap.get(item.name);
+      if (match && inIdx < 4) {
+        innatePicks[inIdx++] = match.id;
+        innateNames.push(match.name);
+      }
+    }
+
+    let acIdx = 0;
+    for (const item of allAcquired) {
+      const match = acMap.get(item.id) || acNameMap.get(item.name);
+      if (match && acIdx < 4) {
+        acquiredPicks[acIdx++] = match.id;
+        acquiredNames.push(match.name);
+      }
+    }
+
+    return {
+      hasTalents: innateNames.length > 0 || acquiredNames.length > 0,
+      innatePicks,
+      acquiredPicks,
+      innateNames,
+      acquiredNames
+    };
+  } catch (err) { return { error: err.stack || err.message, step: 'caught_in_recognizer' };
+    console.warn('Talent recognition error:', err);
+    return null;
+  }
+}
+
 </script>
 <style>
 /* 觉醒与星级单独列表格样式 */
