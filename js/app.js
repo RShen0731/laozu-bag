@@ -7456,8 +7456,6 @@ function Il() {
                       r("th", { children: "名称" }),
                       r("th", { children: "形状" }),
                       G0.value && r("th", { children: "属性" }),
-                      r("th", { children: "星级" }),
-                      r("th", { children: "觉醒" }),
                       Y0.value && r("th", { children: "加成" }),
                       r("th", { children: "品阶" }),
                       r("th", { children: "数量" }),
@@ -7471,7 +7469,7 @@ function Il() {
                       ? r("tr", {
                           class: "empty-row",
                           children: r("td", {
-                            colSpan: 10,
+                            colSpan: 8,
                             children: "暂无数据，请在「法宝列表」中添加",
                           }),
                         })
@@ -7481,7 +7479,6 @@ function Il() {
                           return r(
                             "tr",
                             {
-                              class: (e.tier === 5 && e.quality === 5) ? "is-red" : "not-red",
                               children: [
                                 r("td", {
                                   class: "muted col-idx",
@@ -7517,43 +7514,6 @@ function Il() {
                                       talents: ma.value,
                                     }),
                                   }),
-                                (e.tier === 5 && e.quality === 5 && e.elder)
-                                  ? r("td", {
-                                      class: "col-star nowrap",
-                                      children: r("select", {
-                                        class: (Ne.value[e.id] ?? 0) > 0 ? "elder-select on inline-select" : "elder-select inline-select",
-                                        value: String(Ne.value[e.id] ?? 0),
-                                        onChange: (ev) => ur(e.id, Number(ev.target.value)),
-                                        title: `${e.elder?.name || ''}星级`,
-                                        children: [
-                                          r("option", { value: "0", children: "未设" }),
-                                          Array.from({ length: 5 }, (_, idx) =>
-                                            r("option", { value: String(idx + 1), children: `${idx + 1}星` })
-                                          ),
-                                        ],
-                                      }),
-                                    })
-                                  : r("td", { class: "muted col-star not-red", children: "-" }),
-                                (e.tier === 5 && AWAKEN_DB[e.id])
-                                  ? r("td", {
-                                      class: "col-awaken nowrap",
-                                      children: r("select", {
-                                        class: (AwakenState.value[e.id] ?? 0) > 0 ? "elder-select awaken-on inline-select" : "elder-select inline-select",
-                                        value: String(AwakenState.value[e.id] ?? 0),
-                                        onChange: (ev) => {
-                                          const lv = Number(ev.target.value);
-                                          AwakenState.value = { ...AwakenState.value, [e.id]: lv };
-                                        },
-                                        title: "觉醒等级",
-                                        children: [
-                                          r("option", { value: "0", children: "未觉" }),
-                                          Array.from({ length: AWAKEN_DB[e.id]?.maxLevel ?? 5 }, (_, idx) =>
-                                            r("option", { value: String(idx + 1), children: `${idx + 1}觉` })
-                                          ),
-                                        ],
-                                      }),
-                                    })
-                                  : r("td", { class: "muted col-awaken not-red", children: "-" }),
                                 Y0.value &&
                                   r("td", {
                                     class: "col-buff",

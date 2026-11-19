@@ -163,10 +163,9 @@
     display: block !important;
   }
 
-  /* 非五阶法宝与法宝列表：经典紧凑布局 */
+  /* 法宝列表与已选列表：移动端统一经典紧凑网格布局 */
   .tbl.catalog tr,
-  .tbl.selected tr,
-  .tbl.selected tr.not-red {
+  .tbl.selected tr {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto auto !important;
     grid-template-areas:
@@ -178,52 +177,6 @@
     align-items: center !important;
     padding: 0.25rem 0.35rem !important;
     border-bottom: 1px solid var(--line) !important;
-  }
-
-  /* 非五阶法宝：绝对不展示星级和觉醒！ */
-  .tbl.selected tr:not(.is-red) .col-star,
-  .tbl.selected tr:not(.is-red) .col-awaken,
-  .tbl.selected tr.not-red .col-star,
-  .tbl.selected tr.not-red .col-awaken,
-  .tbl.selected .col-star.not-red,
-  .tbl.selected .col-awaken.not-red {
-    display: none !important;
-  }
-
-  /* 五阶法宝（红色法宝）：经典结构融合星级与觉醒，左侧展开品阶+星级+觉醒，右侧数量+移除 */
-  .tbl.selected tr.is-red {
-    display: grid !important;
-    grid-template-columns: auto auto auto 1fr auto !important;
-    grid-template-areas:
-      "name name name name shape"
-      "tier star awaken qty act"
-      "base base base base base"
-      "buff buff buff buff buff" !important;
-    gap: 0.18rem 0.3rem !important;
-    align-items: center !important;
-    padding: 0.25rem 0.35rem !important;
-    border-bottom: 1px solid var(--line) !important;
-  }
-
-  .tbl.selected tr.is-red td.col-star {
-    grid-area: star !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected tr.is-red td.col-awaken {
-    grid-area: awaken !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-  .tbl.selected tr.is-red td.col-star select,
-  .tbl.selected tr.is-red td.col-awaken select {
-    height: 26px !important;
-    min-height: 26px !important;
-    max-height: 26px !important;
-    font-size: 0.74rem !important;
-    padding: 0 4px !important;
-    width: auto !important;
-    min-width: 52px !important;
   }
 
   /* 第一行：法宝名称 + 长老名称 + 形状 */
@@ -570,13 +523,6 @@ footer {
 
 
 
-/* 觉醒与星级单独列表格样式 */
-.tbl.selected .col-star,
-.tbl.selected .col-awaken {
-  text-align: center !important;
-  vertical-align: middle !important;
-  padding: 0.25rem 0.35rem !important;
-}
 .inline-select {
   padding: 2px 4px !important;
   font-size: 0.78rem !important;
